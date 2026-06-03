@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+"""Build a GitHub Pages artifact with a repository subpath prefix.
+
+The source tree keeps root-absolute paths (/css/, /about/, …) for local dev.
+This script copies the site to an output directory and rewrites those paths
+for project Pages, e.g. /navigator-pryncyp/css/…
+"""
+
+from __future__ import annotations
+
+import argparse
+import re
+import shutil
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+
+SKIP_DIRS = {
+    ".git",
+    ".cursor",
+    "__pycache__",
+    "_site",
+    ".github",
+}
+
+SKIP_FILES = {".DS_Store"}
+
+REWRITE_SUFFIXES = {".html", ".htm", ".js", ".css", ".json", ".txt"}
+
+# HTML attributes, JSON keys, etc.
+ATTR_RE = re.compile(
+    r'\b(href|src|action|content|data-internal-layout|data-internal-layout-baked)'
+    r'\s*=\s*(["\'])/(?!navigator-pryncyp/)(?!/)([^"\']*)\2'
+)
+
+JSON_PATH_RE = re.compile(
+    r'"(url|href)"\s*:\s*"(/(?!navigator-pryncyp/)(?!/)[^"]*)"'
+)
+
+STRING_PATH_RE = re.compile(r'"(/(?!navigator-pryncyp/)(?!/)[^"]*?)"')
+
+CSS_ATTR_RE = re.compile(
+    r'\[(href|src)\s*=\s*(["\'])/(?!navigator-pryncyp/)(?!/)([^"\']*)\2\]'
+)
+
+
+def rewrite_text(text: str, prefix: str) -> str:
+    if not prefix:
+        return text
+    base = prefix.rstrip("/")
+
+    def join_path(path: str) -> str:
+        if not path:
+            return f"{base}/"
+        return f"{base}/{path.lstrip('/')}"
+
+    def attr_sub(match: re.Match[str]) -> str:
+        attr, quote, path = match.group(1), match.group(2), match.group(3)
+        return f'{attr}={quote}{join_path(path)}{quote}'
+
+    def json_sub(match: re.Match[str]) -> str:
+        key, path = match.group(1), match.group(2)
+        return f'"{key}": "{join_path(path.lstrip("/"))}"'
+
+    def string_sub(match: re.Match[str]) -> str:
+        path = match.group(1)
+        return f'"{join_path(path.lstrip("/"))}"'
+
+    def css_sub(match: re.Match[str]) -> str:
+        attr, quote, path = match.group(1), match.group(2), match.group(3)
+        return f'[{attr}={quote}{join_path(path)}{quote}]'
+
+    text = ATTR_RE.sub(attr_sub, text)
+    text = JSON_PATH_RE.sub(json_sub, text)
+    text = CSS_ATTR_RE.sub(css_sub, text)
+    text = STRING_PATH_RE.sub(string_sub, text)
+    return text
+
+
+def should_copy(rel: Path) -> bool:
+    parts = rel.parts
+    if parts and parts[0] in SKIP_DIRS:
+        return False
+    if rel.name in SKIP_FILES:
+        return False
+    if rel.suffix == ".pyc":
+        return False
+    return True
+
+
+def copy_tree(source: Path, dest: Path) -> None:
+    if dest.exists():
+        shutil.rmtree(dest)
+    dest.mkdir(parents=True)
+
+    for item in source.rglob("*"):
+        rel = item.relative_to(source)
+        if not should_copy(rel):
+            continue
+        target = dest / rel
+        if item.is_dir():
+            target.mkdir(parents=True, exist_ok=True)
+            continue
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(item, target)
+
+
+def build(source: Path, output: Path, base_path: str) -> int:
+    copy_tree(source, output)
+    rewritten = 0
+    for path in output.rglob("*"):
+        if not path.is_file():
+            continue
+        rel = path.relative_to(output)
+        if rel.parts[:1] == ("scripts",):
+            continue
+        if path.suffix.lower() not in REWRITE_SUFFIXES:
+            continue
+        original = path.read_text(encoding="utf-8")
+        updated = rewrite_text(original, base_path)
+        if updated != original:
+            path.write_text(updated, encoding="utf-8")
+            rewritten += 1
+
+    (output / ".nojekyll").touch()
+    return rewritten
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Prepare static site for GitHub Pages subpath.")
+    parser.add_argument(
+        "--base-path",
+        default="/navigator-pryncyp",
+        help="Pages project prefix (default: /navigator-pryncyp)",
+    )
+    parser.add_argument(
+        "--output",
+        default=str(ROOT / "_site"),
+        help="Output directory (default: _site)",
+    )
+    parser.add_argument(
+        "--source",
+        default=str(ROOT),
+        help="Site source root (default: repository root)",
+    )
+    args = parser.parse_args()
+
+    base_path = args.base_path.strip()
+    if base_path != "/" and not base_path.startswith("/"):
+        base_path = f"/{base_path}"
+    if base_path != "/" and base_path.endswith("/"):
+        base_path = base_path.rstrip("/")
+
+    output = Path(args.output).resolve()
+    source = Path(args.source).resolve()
+    count = build(source, output, base_path)
+    print(f"Prepared {output} with base path {base_path!r} ({count} files rewritten)")
+
+
+if __name__ == "__main__":
+    main()
