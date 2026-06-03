@@ -65,6 +65,9 @@
 
   function normalizePath(pathname) {
     var path = pathname || "/";
+    if (typeof stripSiteBasePath === "function") {
+      path = stripSiteBasePath(path);
+    }
     if (path.endsWith("/index.html")) {
       path = path.slice(0, -"/index.html".length) || "/";
     }
@@ -96,7 +99,8 @@
       return navTreePromise;
     }
 
-    navTreePromise = fetch(TREE_URL)
+    var treeUrl = typeof siteUrl === "function" ? siteUrl(TREE_URL) : TREE_URL;
+    navTreePromise = fetch(treeUrl)
       .then(function (res) {
         return res.json();
       })

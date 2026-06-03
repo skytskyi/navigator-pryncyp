@@ -20,6 +20,9 @@
 
   function normalizePath(pathname) {
     var path = pathname || "/";
+    if (typeof stripSiteBasePath === "function") {
+      path = stripSiteBasePath(path);
+    }
     if (path.endsWith("/index.html")) {
       path = path.slice(0, -"/index.html".length) || "/";
     }
@@ -61,9 +64,17 @@
       });
   }
 
+  function indexUrl() {
+    return typeof siteUrl === "function" ? siteUrl(INDEX_URL) : INDEX_URL;
+  }
+
+  function searchPageUrl() {
+    return typeof siteUrl === "function" ? siteUrl("/search/") : "/search/";
+  }
+
   function loadIndex() {
     if (!indexPromise) {
-      indexPromise = fetch(INDEX_URL)
+      indexPromise = fetch(indexUrl())
         .then(function (response) {
           if (!response.ok) {
             throw new Error("search index fetch failed");
@@ -407,7 +418,7 @@
       event.preventDefault();
       var input = form.querySelector('input[name="q"]');
       var query = input ? input.value.trim() : "";
-      var target = "/search/";
+      var target = searchPageUrl();
       if (query) {
         target += "?q=" + encodeURIComponent(query);
       }

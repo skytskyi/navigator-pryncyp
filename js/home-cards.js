@@ -18,6 +18,9 @@
   };
 
   function isHomePage() {
+    if (typeof normalizeSitePath === "function") {
+      return normalizeSitePath(window.location.pathname) === "/";
+    }
     var path = window.location.pathname.replace(/\/+$/, "") || "/";
     return path === "" || path === "/" || path === "/index.html";
   }

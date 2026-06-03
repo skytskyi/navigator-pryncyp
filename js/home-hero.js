@@ -3,8 +3,15 @@
   var SEARCH_PLACEHOLDER = "Пошук за темою або послугою";
 
   function isHomePage() {
+    if (typeof normalizeSitePath === "function") {
+      return normalizeSitePath(window.location.pathname) === "/";
+    }
     var path = window.location.pathname.replace(/\/+$/, "") || "/";
     return path === "" || path === "/" || path === "/index.html";
+  }
+
+  function searchActionUrl() {
+    return typeof siteUrl === "function" ? siteUrl("/search/") : "/search/";
   }
 
   function getHeroBlock() {
@@ -17,7 +24,9 @@
   function searchHtml() {
     return (
       '<div class="home-hero-search">' +
-      '<form class="home-hero-search__form" role="search" action="/search/" method="get">' +
+      '<form class="home-hero-search__form" role="search" action="' +
+      searchActionUrl() +
+      '" method="get">' +
       '<img class="home-hero-search__icon" src="/_next/static/media/search.1af3630f.svg" alt="" aria-hidden="true"/>' +
       '<input type="search" class="home-hero-search__input" name="q" ' +
       'placeholder="' +
@@ -38,7 +47,7 @@
         e.preventDefault();
         var input = form.querySelector('input[name="q"]');
         var query = input ? input.value.trim() : "";
-        var target = "/search/";
+        var target = searchActionUrl();
         if (query) {
           target += "?q=" + encodeURIComponent(query);
         }

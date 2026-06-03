@@ -35,6 +35,9 @@
 
   function normalizePath(pathname) {
     var path = pathname || "/";
+    if (typeof stripSiteBasePath === "function") {
+      path = stripSiteBasePath(path);
+    }
     if (path.endsWith("/index.html")) {
       path = path.slice(0, -"/index.html".length) || "/";
     }

@@ -37,11 +37,14 @@ JSON_PATH_RE = re.compile(
     r'"(url|href)"\s*:\s*"(/(?!navigator-pryncyp/)(?!/)[^"]*)"'
 )
 
-STRING_PATH_RE = re.compile(r'"(/(?!navigator-pryncyp/)(?!/)[^"]*?)"')
+STRING_PATH_RE = re.compile(r'"(/(?!navigator-pryncyp/)(?!/)[^"<>/][^"<>]*?)"')
 
 CSS_ATTR_RE = re.compile(
     r'\[(href|src)\s*=\s*(["\'])/(?!navigator-pryncyp/)(?!/)([^"\']*)\2\]'
 )
+
+HTML_TAG_RE = re.compile(r"<html\b([^>]*)>", re.I)
+SITE_BASE_PATH_ATTR_RE = re.compile(r'\s*data-site-base-path="[^"]*"', re.I)
 
 
 def rewrite_text(text: str, prefix: str) -> str:
@@ -88,6 +91,23 @@ def should_copy(rel: Path) -> bool:
     return True
 
 
+def inject_site_base_path(text: str, base_path: str) -> str:
+    if not base_path or base_path == "/":
+        return text
+
+    base = base_path.rstrip("/")
+
+    def html_sub(match: re.Match[str]) -> str:
+        attrs = match.group(1)
+        if SITE_BASE_PATH_ATTR_RE.search(attrs):
+            attrs = SITE_BASE_PATH_ATTR_RE.sub(f' data-site-base-path="{base}"', attrs, count=1)
+        else:
+            attrs = f' data-site-base-path="{base}"{attrs}'
+        return f"<html{attrs}>"
+
+    return HTML_TAG_RE.sub(html_sub, text, count=1)
+
+
 def copy_tree(source: Path, dest: Path) -> None:
     if dest.exists():
         shutil.rmtree(dest)
@@ -118,6 +138,8 @@ def build(source: Path, output: Path, base_path: str) -> int:
             continue
         original = path.read_text(encoding="utf-8")
         updated = rewrite_text(original, base_path)
+        if path.suffix.lower() in {".html", ".htm"}:
+            updated = inject_site_base_path(updated, base_path)
         if updated != original:
             path.write_text(updated, encoding="utf-8")
             rewritten += 1

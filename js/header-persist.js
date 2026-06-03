@@ -160,6 +160,9 @@
   );
 
   function isHomePage() {
+    if (typeof normalizeSitePath === "function") {
+      return normalizeSitePath(window.location.pathname) === "/";
+    }
     var path = window.location.pathname.replace(/\/index\.html$/, "").replace(/\/+$/, "");
     return path === "" || path === "/";
   }
