@@ -289,7 +289,8 @@
     results.forEach(function (item) {
       var link = document.createElement("a");
       link.className = "site-search-result";
-      link.href = item.doc.url;
+      link.href =
+        typeof siteUrl === "function" ? siteUrl(item.doc.url) : item.doc.url;
       link.innerHTML =
         '<h2 class="site-search-result__title">' +
         escapeHtml(item.doc.title) +

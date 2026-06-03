@@ -25,7 +25,8 @@ SKIP_DIRS = {
 
 SKIP_FILES = {".DS_Store"}
 
-REWRITE_SUFFIXES = {".html", ".htm", ".js", ".css", ".json", ".txt"}
+# JS is excluded: runtime code uses site-base.js helpers; rewriting string literals breaks them.
+REWRITE_SUFFIXES = {".html", ".htm", ".css", ".json", ".txt"}
 
 # HTML attributes, JSON keys, etc.
 ATTR_RE = re.compile(
@@ -45,6 +46,11 @@ CSS_ATTR_RE = re.compile(
 
 HTML_TAG_RE = re.compile(r"<html\b([^>]*)>", re.I)
 SITE_BASE_PATH_ATTR_RE = re.compile(r'\s*data-site-base-path="[^"]*"', re.I)
+META_BASE_PATH_RE = re.compile(
+    r'<meta\s+name="site-base-path"\s+content="[^"]*"\s*/?\s*>',
+    re.I,
+)
+META_BASE_PATH_TAG = '<meta name="site-base-path" content="{base}"/>'
 
 
 def rewrite_text(text: str, prefix: str) -> str:
@@ -96,6 +102,7 @@ def inject_site_base_path(text: str, base_path: str) -> str:
         return text
 
     base = base_path.rstrip("/")
+    meta_tag = META_BASE_PATH_TAG.format(base=base)
 
     def html_sub(match: re.Match[str]) -> str:
         attrs = match.group(1)
@@ -105,7 +112,12 @@ def inject_site_base_path(text: str, base_path: str) -> str:
             attrs = f' data-site-base-path="{base}"{attrs}'
         return f"<html{attrs}>"
 
-    return HTML_TAG_RE.sub(html_sub, text, count=1)
+    text = HTML_TAG_RE.sub(html_sub, text, count=1)
+    if META_BASE_PATH_RE.search(text):
+        text = META_BASE_PATH_RE.sub(meta_tag, text, count=1)
+    elif "<head>" in text:
+        text = text.replace("<head>", f"<head>{meta_tag}", 1)
+    return text
 
 
 def copy_tree(source: Path, dest: Path) -> None:

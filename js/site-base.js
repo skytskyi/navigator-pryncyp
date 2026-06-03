@@ -9,6 +9,21 @@
     return "";
   }
 
+  function detectBaseFromPathname() {
+    if (typeof window === "undefined" || !window.location) {
+      return "";
+    }
+    var host = window.location.hostname || "";
+    if (!host.endsWith("github.io")) {
+      return "";
+    }
+    var segments = window.location.pathname.split("/").filter(Boolean);
+    if (!segments.length) {
+      return "";
+    }
+    return "/" + segments[0];
+  }
+
   function getSiteBasePath() {
     if (cachedBase !== null) {
       return cachedBase;
@@ -18,7 +33,12 @@
       cachedBase = String(fromDataset).replace(/\/+$/, "");
       return cachedBase;
     }
-    cachedBase = readMetaBasePath();
+    var fromMeta = readMetaBasePath();
+    if (fromMeta) {
+      cachedBase = fromMeta;
+      return cachedBase;
+    }
+    cachedBase = detectBaseFromPathname();
     return cachedBase;
   }
 

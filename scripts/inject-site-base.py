@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SCRIPT_TAG = '<script src="/js/site-base.js?v=1"></script>'
+SCRIPT_TAG = '<script src="/js/site-base.js?v=2"></script>'
 SCRIPT_RE = re.compile(r'<script\s+src="/js/site-base\.js\?v=\d+"\s*></script>', re.I)
 PATCH_RUNTIME_RE = re.compile(r'(<script\s+src="/js/patch-runtime\.js\?v=\d+"\s*></script>)', re.I)
 

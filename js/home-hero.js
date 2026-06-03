@@ -88,7 +88,9 @@
 
   function applyHero() {
     if (!isHomePage()) {
-      removeSearchOutsideHome();
+      if (typeof normalizeSitePath === "function") {
+        removeSearchOutsideHome();
+      }
       return false;
     }
 
