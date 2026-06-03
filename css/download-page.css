@@ -1,0 +1,172 @@
+.download-page-wrap {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+.download-page-card {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding: 0;
+  background: transparent;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+@media (min-width: 960px) {
+  .download-page-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 48px;
+  }
+}
+
+.download-page-card__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.internal-layout-active .internal-article-content .download-page-card .css-tualuh:not(.download-page-card__qr-caption),
+.internal-layout-active .internal-article-content p.download-page-card__lead {
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 10px 0 0 !important;
+  max-width: none;
+  color: inherit !important;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.internal-page-shell--download .download-page-card .internal-section-h2 {
+  margin: 0 0 16px;
+}
+
+.download-page-card__stores {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+@media (min-width: 960px) {
+  .download-page-card__stores {
+    margin-top: 28px;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 767px) {
+  .download-page-card__stores {
+    flex-direction: column;
+  }
+}
+
+.download-store-btn {
+  display: inline-flex;
+  align-items: center;
+  flex: 1 1 0;
+  min-width: 0;
+  width: 100%;
+  gap: 10px;
+  min-height: 56px;
+  padding: 0 12px 0 0;
+  background: #f4f4f4;
+  color: #000000;
+  border: 2px solid #000000;
+  box-sizing: border-box;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
+  text-decoration: none;
+  transition: background-color 200ms ease;
+}
+
+@media (min-width: 960px) {
+  .download-store-btn {
+    font-size: 14px;
+    padding: 0 14px 0 0;
+  }
+}
+
+.download-store-btn:hover {
+  background: #eeeeee;
+  color: #000000;
+}
+
+.download-store-btn__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 56px;
+  align-self: stretch;
+  background: #000000;
+}
+
+.download-store-btn__icon img {
+  display: block;
+  width: 24px;
+  height: 24px;
+}
+
+.download-page-card__qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.download-page-card__qr-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 240px;
+}
+
+.download-page-card__qr-box {
+  padding: 0;
+  background: transparent;
+  line-height: 0;
+  width: 100%;
+}
+
+.download-page-card__qr-box img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  margin: 0 auto;
+}
+
+.internal-layout-active .internal-page-shell--download .internal-article-content p.download-page-card__qr-caption,
+.internal-layout-active .internal-page-shell--download .internal-article-content .download-page-card .download-page-card__qr-caption {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  text-align: center !important;
+  font-size: 12px !important;
+  line-height: 1.4;
+  color: #6b6a6a;
+}
+
+.internal-page-shell--download .internal-article-toc,
+.internal-page-shell--download .internal-toc-toggle-wrap {
+  display: none !important;
+}
+
+.internal-page-shell--download .internal-article-layout {
+  justify-content: center;
+}
+
+.internal-page-shell--download .css-7nll2u {
+  width: 100% !important;
+}
+
+.internal-layout-active .internal-page-shell--download .internal-article-content {
+  box-sizing: border-box;
+  width: 100%;
+}

@@ -1,0 +1,10 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://navigator.pryncyp.org/
+
+# Sitemaps
+Sitemap: https://navigator.pryncyp.org/sitemap.xml
+Sitemap: https://navigator.pryncyp.org/sitemap-api.xml

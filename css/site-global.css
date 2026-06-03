@@ -1,0 +1,55 @@
+/* Reserve scrollbar width on every page to prevent header/menu layout shift. */
+html {
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
+
+/* Keep footer at the bottom when page content is shorter than the viewport. */
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+body > #__next {
+  flex: 1 0 auto;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Category pages: header/nav only — do not grow this block. */
+body > #__next > .mantine-gemcqc:not(:has(> main.css-yp9swi)) {
+  flex: 0 0 auto;
+}
+
+/* Homepage/standalone: main lives inside the page shell wrapper. */
+body > #__next > .mantine-gemcqc:has(> main.css-yp9swi) {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+body > #__next > main.css-yp9swi,
+body > #__next > .mantine-gemcqc > main.css-yp9swi {
+  flex: 1 0 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0;
+}
+
+body > #__next > footer,
+body > #__next > .mantine-gemcqc > footer {
+  flex-shrink: 0;
+  margin-top: auto;
+}
+
+body > #__next > main.css-yp9swi > .internal-page-shell {
+  flex: 1 0 auto;
+  width: 100%;
+  min-height: 100%;
+}

@@ -1,0 +1,3085 @@
+#!/usr/bin/env python3
+"""Bake internal page layout into static HTML (sidebar, breadcrumbs, article shell)."""
+
+from __future__ import annotations
+
+import json
+import re
+import sys
+from html import escape
+from pathlib import Path
+from urllib.parse import quote, unquote
+
+from bs4 import BeautifulSoup, NavigableString, Tag
+
+SCRIPTS_DIR = Path(__file__).resolve().parent
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
+
+from linkify_email_addresses import linkify_email_addresses
+from normalize_typographic_quotes import normalize_typographic_quotes
+
+ROOT = Path(__file__).resolve().parent.parent
+TREE_PATH = ROOT / "data" / "site-nav-tree.json"
+HOME_LABEL = "Головна"
+SUBCAT_LABEL = "Виберіть підкатегорію:"
+STANDALONE_PAGES = {"/about/", "/documents/", "/faq/", "/download/", "/search/", "/privacy-policy/"}
+PRIVACY_PAGE_TITLE = (
+    "Політика конфіденційності Громадської організації "
+    "«Правозахисний центр «ПРИНЦИП»»"
+)
+
+ABOUT_STYLE_PAGES = {"/about/", "/faq/"}
+TITLE_SUFFIX = " | Правовий навігатор"
+CARD_PALETTE = ("#686F4E", "#908F8B", "#61523A", "#503334", "#B29069", "#7D997B")
+DOCUMENT_DOWNLOAD_ICON = "/img/download_24dp.svg"
+TOC_DOC_BADGE_ICON = "/img/paperclip.svg"
+SECTION_H2_CLASS = "internal-section-h2"
+SECTION_H3_CLASS = "internal-section-h3"
+SECTION_H4_CLASS = "internal-section-h4"
+
+
+def normalize_path(pathname: str) -> str:
+    path = pathname or "/"
+    if path.endswith("/index.html"):
+        path = path[: -len("/index.html")] or "/"
+    if path.endswith(".html"):
+        path = path[: -len(".html")]
+    if path != "/" and not path.endswith("/"):
+        path += "/"
+    return path
+
+
+def path_from_file(html_path: Path) -> str:
+    rel = html_path.relative_to(ROOT).as_posix()
+    if rel == "index.html":
+        return "/"
+    if rel.endswith("/index.html"):
+        return normalize_path("/" + rel[: -len("index.html")])
+    return normalize_path("/" + rel)
+
+
+def paths_equal(a: str, b: str) -> bool:
+    return normalize_path(a) == normalize_path(b)
+
+
+def load_tree() -> dict:
+    return json.loads(TREE_PATH.read_text(encoding="utf-8"))
+
+
+def path_in_category(path: str, category: dict) -> bool:
+    if paths_equal(path, category["href"]):
+        return True
+    if category["id"] == "injured":
+        for child in category.get("children") or []:
+            if path.startswith(child["href"]):
+                return True
+        return paths_equal(path, category["href"])
+    return path.startswith(category["href"])
+
+
+def find_category(tree: dict, path: str) -> dict | None:
+    for category in tree.get("categories") or []:
+        if path_in_category(path, category):
+            return category
+    return None
+
+
+def find_trail(nodes: list[dict], path: str, trail: list[dict] | None = None) -> list[dict] | None:
+    trail = trail or []
+    for node in nodes:
+        next_trail = trail + [node]
+        if paths_equal(node["href"], path):
+            return next_trail
+        children = node.get("children") or []
+        if children:
+            found = find_trail(children, path, next_trail)
+            if found:
+                return found
+    return None
+
+
+def build_breadcrumb_trail(category: dict | None, path: str) -> list[dict]:
+    trail: list[dict] = [{"label": HOME_LABEL, "href": "/"}]
+    if not category:
+        return trail
+
+    node_trail = find_trail(category.get("children") or [], path) or []
+    trail.append({"label": category["label"], "href": category["href"]})
+    if paths_equal(path, category["href"]):
+        trail[-1]["current"] = True
+        return trail
+
+    for i, node in enumerate(node_trail):
+        trail.append(
+            {
+                "label": node["label"],
+                "href": node["href"],
+                "current": i == len(node_trail) - 1,
+            }
+        )
+    return trail
+
+
+def should_expand_node(href: str, path: str) -> bool:
+    if paths_equal(href, path):
+        return False
+    return path.startswith(href)
+
+
+def breadcrumbs_html(trail: list[dict]) -> str:
+    parts: list[str] = []
+    for i, item in enumerate(trail):
+        if i > 0:
+            parts.append(
+                '<span class="internal-breadcrumbs__sep" aria-hidden="true">'
+                '<img src="/img/breadcrumbs_arrow.svg" alt="" width="7" height="11" />'
+                "</span>"
+            )
+        if item.get("current"):
+            parts.append(
+                f'<span class="internal-breadcrumbs__item internal-breadcrumbs__item--current">'
+                f'{escape(item["label"])}</span>'
+            )
+        else:
+            parts.append(
+                f'<a class="internal-breadcrumbs__item" href="{escape(item["href"], quote=True)}">'
+                f'{escape(item["label"])}</a>'
+            )
+    return f'<nav class="internal-breadcrumbs" aria-label="Breadcrumb">{"".join(parts)}</nav>'
+
+
+def render_tree_nodes(nodes: list[dict], path: str) -> str:
+    html_parts: list[str] = []
+    for node in nodes:
+        children = node.get("children") or []
+        has_children = bool(children)
+        is_active = paths_equal(node["href"], path)
+        is_expanded = has_children and should_expand_node(node["href"], path)
+        toggle_class = "internal-tree-toggle"
+        if not has_children:
+            toggle_class += " internal-tree-toggle--hidden"
+
+        html_parts.append('<li class="internal-tree-item">')
+        html_parts.append('<div class="internal-tree-row">')
+        html_parts.append(
+            f'<button type="button" class="{toggle_class}" data-tree-href="{escape(node["href"], quote=True)}" '
+            f'aria-expanded="{"true" if is_expanded else "false"}">'
+            '<img class="internal-tree-toggle__icon" src="/img/arrow_down.svg" alt="" width="12" height="12" aria-hidden="true" />'
+            "</button>"
+        )
+        link_class = "internal-tree-link"
+        if is_active:
+            link_class += " internal-tree-link--active"
+        html_parts.append(
+            f'<a class="{link_class}" href="{escape(node["href"], quote=True)}">{escape(node["label"])}</a>'
+        )
+        html_parts.append("</div>")
+        if has_children:
+            style = "" if is_expanded else ' style="display:none"'
+            html_parts.append(f'<ul class="internal-tree-list"{style}>')
+            html_parts.append(render_tree_nodes(children, path))
+            html_parts.append("</ul>")
+        html_parts.append("</li>")
+    return "".join(html_parts)
+
+
+def sidebar_html(category: dict, path: str) -> str:
+    return (
+        f'<aside class="internal-sidebar">'
+        f'<div class="internal-sidebar__title">{escape(category["label"])}</div>'
+        f'<nav class="internal-sidebar__tree" aria-label="{escape(category["label"])}">'
+        f'<ul class="internal-tree-list">{render_tree_nodes(category.get("children") or [], path)}</ul>'
+        f"</nav></aside>"
+    )
+
+
+def build_mobile_toc_list_item_html(href: str, title: str, badge_html: str = "") -> str:
+    return (
+        '<li class="mantine-List-item">'
+        '<div class="internal-toc-item-text">'
+        f'<a class="css-16clbz5" href="{escape(href, quote=True)}">{escape(title)}</a>'
+        f"{badge_html}"
+        "</div></li>"
+    )
+
+
+def collect_mobile_toc_items_from_wrap(toc_wrap: Tag) -> list[tuple[str, str, str]]:
+    items: list[tuple[str, str, str]] = []
+    for link in toc_wrap.select(".mantine-List-item a[href*='#']"):
+        href = link.get("href") or ""
+        hash_idx = href.find("#")
+        if hash_idx >= 0:
+            href = href[hash_idx:]
+        title = link.get_text(strip=True)
+        if not href or not title:
+            continue
+        container = _toc_item_container(link)
+        badge = container.select_one(".internal-toc-doc-badge") if container else None
+        badge_html = str(badge) if badge else ""
+        items.append((href, title, badge_html))
+    return items
+
+
+def mobile_toc_toggle_markup_from_wrap(toc_wrap: Tag) -> str:
+    items = collect_mobile_toc_items_from_wrap(toc_wrap)
+    items_html = "".join(
+        build_mobile_toc_list_item_html(href, title, badge_html)
+        for href, title, badge_html in items
+    )
+    empty_class = "" if items else " internal-toc-toggle-wrap--empty"
+    return (
+        f'<div class="internal-toc-toggle-wrap{empty_class}">'
+        '<button type="button" class="internal-toc-toggle" aria-label="Зміст сторінки" aria-expanded="false">'
+        '<img src="/img/toc.svg" alt="" width="12" height="12" aria-hidden="true" />'
+        "</button>"
+        '<div class="internal-toc-dropdown" hidden>'
+        '<div class="internal-toc-dropdown__panel">'
+        '<h4 class="mantine-Text-root mantine-Title-root">Зміст сторінки</h4>'
+        f'<ul class="mantine-List-root">{items_html}</ul>'
+        "</div></div></div>"
+    )
+
+
+def mobile_toc_toggle_markup(toc_items: list[tuple[str, str]]) -> str:
+    items_html = "".join(
+        build_mobile_toc_list_item_html(href, title)
+        for href, title in toc_items
+    )
+    empty_class = "" if toc_items else " internal-toc-toggle-wrap--empty"
+    return (
+        f'<div class="internal-toc-toggle-wrap{empty_class}">'
+        '<button type="button" class="internal-toc-toggle" aria-label="Зміст сторінки" aria-expanded="false">'
+        '<img src="/img/toc.svg" alt="" width="12" height="12" aria-hidden="true" />'
+        "</button>"
+        '<div class="internal-toc-dropdown" hidden>'
+        '<div class="internal-toc-dropdown__panel">'
+        '<h4 class="mantine-Text-root mantine-Title-root">Зміст сторінки</h4>'
+        f'<ul class="mantine-List-root">{items_html}</ul>'
+        "</div></div></div>"
+    )
+
+
+def breadcrumbs_row_html(trail: list[dict], toc_items: list[tuple[str, str]]) -> str:
+    return (
+        f'<div class="internal-breadcrumbs-row">'
+        f"{breadcrumbs_html(trail)}"
+        f"{mobile_toc_toggle_markup(toc_items)}"
+        "</div>"
+    )
+
+
+def collect_baked_toc_items(content_host: Tag) -> list[tuple[str, str]]:
+    toc_wrap = content_host.select_one(".internal-article-toc")
+    if not toc_wrap:
+        return []
+
+    toc_items = fix_toc_wrap(toc_wrap)
+    if toc_items:
+        return toc_items
+
+    main_col = content_host.select_one(".css-7nll2u")
+    if main_col:
+        return toc_nav_items(collect_toc_entries(main_col))
+    return []
+
+
+def sync_baked_mobile_toc(content_host: Tag) -> bool:
+    row = content_host.select_one(".internal-breadcrumbs-row")
+    if not row:
+        return False
+
+    toc_wrap = content_host.select_one(".internal-article-toc")
+    if toc_wrap and toc_wrap.select(".mantine-List-item a[href*='#']"):
+        toggle_html = mobile_toc_toggle_markup_from_wrap(toc_wrap)
+    else:
+        toc_items = collect_baked_toc_items(content_host)
+        toggle_html = mobile_toc_toggle_markup(toc_items)
+
+    toggle_markup = BeautifulSoup(toggle_html, "html.parser")
+    toggle = row.select_one(".internal-toc-toggle-wrap")
+    if toggle:
+        toggle.replace_with(toggle_markup)
+    else:
+        row.append(toggle_markup)
+    return True
+
+
+def strip_html_cards(cards: list[dict]) -> str:
+    if not cards:
+        return ""
+    items = []
+    for card in cards:
+        style = f' style="background-color:{escape(card["color"])}"' if card.get("color") else ""
+        icon = (
+            f'<img class="internal-strip__icon" src="{escape(card["icon"], quote=True)}" alt="" aria-hidden="true"/>'
+            if card.get("icon")
+            else ""
+        )
+        items.append(
+            f'<a class="internal-strip"{style} href="{escape(card["href"], quote=True)}">'
+            f"{icon}<span class=\"internal-strip__label\">{escape(card['label'])}</span></a>"
+        )
+    return (
+        f'<div class="internal-subcats-panel">'
+        f'<p class="internal-subcats__label">{SUBCAT_LABEL}</p>'
+        f'<div class="internal-subcats__list">{"".join(items)}</div></div>'
+    )
+
+
+def load_next_data(soup: BeautifulSoup) -> dict | None:
+    script = soup.find("script", id="__NEXT_DATA__")
+    if not script or not script.string:
+        return None
+    return json.loads(script.string)
+
+
+def page_title(soup: BeautifulSoup, data: dict | None) -> str:
+    title_tag = soup.find("title")
+    title = title_tag.get_text(strip=True).replace(TITLE_SUFFIX, "") if title_tag else ""
+    if not data:
+        return title
+    pp = data.get("props", {}).get("pageProps", {})
+    api = pp.get("apiData", {})
+    if "stages" in api and api["stages"].get("data"):
+        stage = api["stages"]["data"][0]["attributes"]
+        return stage.get("SEO_Block", {}).get("Title") or stage.get("Stage_Title") or title
+    if "substages" in api and api["substages"].get("data"):
+        sub = api["substages"]["data"][0]["attributes"]
+        return sub.get("Substage_Title") or title
+    return title
+
+
+def standalone_page_title(main: Tag, soup: BeautifulSoup, data: dict | None) -> str:
+    for selector in ("h1.mantine-Title-root", "h1.internal-page-title", "h1"):
+        h1 = main.select_one(selector)
+        if not h1:
+            continue
+        text = h1.get_text(strip=True)
+        if text and "|" not in text:
+            return text
+    return page_title(soup, data)
+
+
+def enrich_cards(cards: list[dict]) -> list[dict]:
+    enriched: list[dict] = []
+    for index, card in enumerate(cards):
+        item = dict(card)
+        if not item.get("color"):
+            item["color"] = CARD_PALETTE[index % len(CARD_PALETTE)]
+        enriched.append(item)
+    return enriched
+
+
+def cards_from_nodes(nodes: list[dict]) -> list[dict]:
+    return enrich_cards(
+        [
+            {
+                "href": node["href"],
+                "label": node["label"],
+                "icon": node.get("icon") or "",
+                "color": node.get("color") or "",
+            }
+            for node in nodes
+        ]
+    )
+
+
+def extract_cards_from_dom(soup: BeautifulSoup) -> list[dict]:
+    container = soup.select_one(".css-1jbx5ca")
+    if not container:
+        return []
+    seen: set[str] = set()
+    cards: list[dict] = []
+    for link in container.select("a.css-1q51wqn, a.css-1gooe0"):
+        href = link.get("href") or ""
+        if not href or href in seen:
+            continue
+        seen.add(href)
+        label_node = link.select_one("p.css-6ixod5, p.css-1nnvzuy")
+        icon_node = link.find("img")
+        bg = link.select_one(".css-bxqx5h, .css-5km5in")
+        color = bg.get("style", "") if bg else ""
+        m = re.search(r"background-color:\s*([^;]+)", color)
+        cards.append(
+            {
+                "href": href,
+                "label": label_node.get_text(strip=True) if label_node else href,
+                "icon": icon_node.get("src") if icon_node else "",
+                "color": m.group(1).strip() if m else "",
+            }
+        )
+    return enrich_cards(cards)
+
+
+def resolve_cards(category: dict, path: str, trail: list[dict], soup: BeautifulSoup) -> list[dict]:
+    if paths_equal(path, category["href"]):
+        return cards_from_nodes(category.get("children") or [])
+    dom_cards = extract_cards_from_dom(soup)
+    if dom_cards:
+        return dom_cards
+    if trail:
+        current = trail[-1]
+        children = current.get("children") or []
+        if children:
+            return cards_from_nodes(children)
+    return []
+
+
+def _in_accordion_label(tag: Tag) -> bool:
+    return bool(tag.find_parent(class_=lambda value: value and "mantine-Accordion-label" in value))
+
+
+def _in_toc_widget(tag: Tag) -> bool:
+    return bool(
+        tag.find_parent(
+            class_=lambda value: value
+            and (
+                "internal-article-toc" in value
+                or "internal-toc-dropdown" in value
+                or "internal-toc-generated" in value
+            )
+        )
+    )
+
+
+def _is_intentional_section_h2(tag: Tag) -> bool:
+    classes = tag.get("class") or []
+    if SECTION_H2_CLASS in classes:
+        return True
+    if _in_accordion_label(tag):
+        return True
+    parent = tag.parent
+    if (
+        tag.name == "h2"
+        and isinstance(parent, Tag)
+        and "css-sdnfq3" in (parent.get("class") or [])
+        and parent.find("h2", recursive=False) is tag
+    ):
+        return True
+    return False
+
+
+def privacy_page_title(main: Tag | None = None) -> str:
+    if main:
+        for h1 in main.select("h1"):
+            text = h1.get_text(strip=True)
+            if text and "Політика конфіденційності" in text:
+                return text
+    return PRIVACY_PAGE_TITLE
+
+
+def upsert_privacy_page_title(soup: BeautifulSoup) -> bool:
+    h1 = soup.select_one("h1.internal-page-title")
+    if not h1:
+        return False
+    if h1.get_text(strip=True) == PRIVACY_PAGE_TITLE:
+        return False
+    h1.clear()
+    h1.append(PRIVACY_PAGE_TITLE)
+    return True
+
+
+def prepare_privacy_standalone_layout(content_host: Tag, soup: BeautifulSoup) -> bool:
+    """Convert legacy privacy-policy markup into standard standalone article layout."""
+    changed = False
+
+    for old_toc in content_host.select(".css-12mrpgq"):
+        old_toc.decompose()
+        changed = True
+
+    if content_host.select_one(".css-k1l4fw.internal-article-layout"):
+        return changed
+
+    content_wrap = content_host.select_one(".css-10gvhst")
+    if not content_wrap:
+        return changed
+
+    for el in content_wrap.select(".css-1sctyhq"):
+        el.decompose()
+        changed = True
+
+    layout = soup.new_tag(
+        "div",
+        attrs={"class": "css-k1l4fw mantine-1y9n8s7 internal-article-layout"},
+    )
+    white = soup.new_tag("div", attrs={"class": "internal-article-content"})
+    main_col = soup.new_tag("div", attrs={"class": "css-7nll2u mantine-1fr50if"})
+
+    for child in list(content_wrap.children):
+        if isinstance(child, Tag) and child.name != "style":
+            main_col.append(child.extract())
+
+    for h1 in main_col.select("h1"):
+        h1.decompose()
+        changed = True
+
+    content_wrap.decompose()
+    white.append(main_col)
+    layout.append(white)
+    content_host.append(layout)
+    return True
+
+
+PRIVACY_BODY_P_CLASS = "css-zcvv7c"
+PRIVACY_MISTAGGED_H3_MIN_LEN = 100
+
+
+def repair_privacy_subsection_h2_to_paragraph(soup: BeautifulSoup, content: Tag) -> bool:
+    """Demote h2 that follows h3 inside a section block (e.g. organization name)."""
+    changed = False
+    for block in content.select(".css-bw3xdm"):
+        children = [
+            child
+            for child in block.children
+            if isinstance(child, Tag) and child.name != "style"
+        ]
+        for index, child in enumerate(children):
+            if child.name != "h2" or index == 0:
+                continue
+            prev = children[index - 1]
+            if prev.name != "h3":
+                continue
+            p = soup.new_tag("p", attrs={"class": PRIVACY_BODY_P_CLASS})
+            for node in list(child.contents):
+                if isinstance(node, Tag):
+                    p.append(node.extract())
+                else:
+                    p.append(node)
+            child.replace_with(p)
+            changed = True
+    return changed
+
+
+def repair_privacy_mistagged_headings(soup: BeautifulSoup, content: Tag) -> bool:
+    changed = False
+    for h3 in content.select("h3.css-1kjtes2"):
+        text = h3.get_text(strip=True)
+        if len(text) <= PRIVACY_MISTAGGED_H3_MIN_LEN:
+            continue
+        p = soup.new_tag("p", attrs={"class": PRIVACY_BODY_P_CLASS})
+        for child in list(h3.contents):
+            if isinstance(child, Tag):
+                p.append(child.extract())
+            else:
+                p.append(child)
+        h3.replace_with(p)
+        changed = True
+    return changed
+
+
+def repair_privacy_page_layout(soup: BeautifulSoup, content: Tag) -> bool:
+    changed = False
+    main_col = content.select_one(".css-7nll2u")
+    if not main_col:
+        return False
+
+    if repair_privacy_mistagged_headings(soup, content):
+        changed = True
+
+    if repair_privacy_subsection_h2_to_paragraph(soup, content):
+        changed = True
+
+    for block in content.select(".css-bw3xdm[id]"):
+        h2 = block.select_one("h2")
+        if h2:
+            _ensure_section_h2(h2)
+            changed = True
+        block_classes = list(block.get("class") or [])
+        if "css-sdnfq3" not in block_classes:
+            block_classes.append("css-sdnfq3")
+            block["class"] = block_classes
+            changed = True
+
+    for wrap in list(main_col.select(":scope > .css-jvj7uf")):
+        moved = False
+        for child in list(wrap.children):
+            if isinstance(child, Tag) and child.name != "style":
+                wrap.insert_before(child.extract())
+                moved = True
+        if moved or not wrap.get_text(strip=True):
+            wrap.decompose()
+            changed = True
+
+    return changed
+
+
+def finalize_privacy_layout(content_host: Tag, soup: BeautifulSoup, title: str | None = None) -> bool:
+    changed = False
+    article = content_host.select_one(".internal-article-content")
+    header = content_host.select_one(".internal-main-header")
+    if not article:
+        return False
+
+    title_in_article = article.select_one(":scope > .internal-page-title")
+    if title_in_article and header:
+        if not header.select_one(".internal-page-title"):
+            breadcrumb = header.select_one(".internal-breadcrumbs-row")
+            if breadcrumb:
+                breadcrumb.insert_after(title_in_article.extract())
+            else:
+                header.append(title_in_article.extract())
+            changed = True
+        else:
+            title_in_article.decompose()
+            changed = True
+    elif title and header and not header.select_one(".internal-page-title"):
+        h1 = soup.new_tag("h1", attrs={"class": "internal-page-title"})
+        h1.string = title
+        breadcrumb = header.select_one(".internal-breadcrumbs-row")
+        if breadcrumb:
+            breadcrumb.insert_after(h1)
+        else:
+            header.append(h1)
+        changed = True
+
+    if repair_privacy_page_layout(soup, article):
+        changed = True
+    return changed
+
+
+def normalize_heading_levels(content: Tag) -> bool:
+    """Promote accordion section titles h4→h2; demote in-content h2→h3."""
+    changed = False
+
+    for h2 in content.select(".mantine-wnhdd8 > .mantine-j9g3bi > h2"):
+        classes = h2.get("class") or []
+        if "css-o8yj4d" not in classes:
+            continue
+        h2.name = "h3"
+        classes = [cls for cls in classes if cls != SECTION_H2_CLASS]
+        if SECTION_H3_CLASS not in classes:
+            classes.append(SECTION_H3_CLASS)
+        h2["class"] = classes
+        changed = True
+
+    for h2 in list(content.find_all("h2")):
+        if _in_toc_widget(h2) or _is_intentional_section_h2(h2):
+            continue
+        h2.name = "h3"
+        classes = h2.get("class") or []
+        if SECTION_H3_CLASS not in classes:
+            h2["class"] = [*classes, SECTION_H3_CLASS]
+        changed = True
+
+    for label in content.select(".mantine-Accordion-label"):
+        for h4 in label.find_all("h4"):
+            h4.name = "h2"
+            classes = h4.get("class") or []
+            if SECTION_H2_CLASS not in classes:
+                h4["class"] = [*classes, SECTION_H2_CLASS]
+            changed = True
+
+    for h3 in content.select(".mantine-wnhdd8 > .mantine-j9g3bi > h3"):
+        classes = h3.get("class") or []
+        if "css-su8tkm" not in classes:
+            continue
+        h3.name = "h2"
+        classes = [cls for cls in classes if cls not in (SECTION_H3_CLASS,)]
+        if SECTION_H2_CLASS not in classes:
+            classes.append(SECTION_H2_CLASS)
+        h3["class"] = classes
+        changed = True
+
+    return changed
+
+
+def _promote_heading_to_h3(heading: Tag) -> None:
+    heading.name = "h3"
+    classes = [
+        cls
+        for cls in (heading.get("class") or [])
+        if cls not in (SECTION_H2_CLASS, SECTION_H4_CLASS)
+    ]
+    if SECTION_H3_CLASS not in classes:
+        classes.append(SECTION_H3_CLASS)
+    heading["class"] = classes
+
+
+def _is_card_section_h2(heading: Tag, scope: Tag) -> bool:
+    if heading.name != "h2":
+        return False
+    classes = heading.get("class") or []
+    if SECTION_H2_CLASS in classes:
+        return True
+    if scope.name == "div" and "css-sdnfq3" in (scope.get("class") or []):
+        first_h2 = scope.select_one(":scope > h2")
+        return heading is first_h2
+    return False
+
+
+def fix_orphan_h4_headings(content: Tag) -> bool:
+    """Promote h4 to h3 when a card/section has no preceding h3 subheading."""
+    changed = False
+    scopes = content.select(".css-sdnfq3") or [content]
+    for scope in scopes:
+        seen_h3 = False
+        for heading in scope.find_all(["h2", "h3", "h4"]):
+            if _in_toc_widget(heading):
+                continue
+            if heading.find_parent(
+                class_=lambda value: value and "mantine-Accordion-label" in value
+            ):
+                continue
+            if _is_card_section_h2(heading, scope):
+                seen_h3 = False
+                continue
+            if heading.name == "h3":
+                seen_h3 = True
+                continue
+            if heading.name == "h4" and not seen_h3:
+                _promote_heading_to_h3(heading)
+                seen_h3 = True
+                changed = True
+    return changed
+
+
+def _ensure_section_h2(heading: Tag) -> None:
+    heading.name = "h2"
+    classes = [cls for cls in (heading.get("class") or []) if cls != SECTION_H3_CLASS]
+    if SECTION_H2_CLASS not in classes:
+        classes.append(SECTION_H2_CLASS)
+    heading["class"] = classes
+
+
+def demote_about_card_subheadings(card: Tag, section_h2: Tag) -> bool:
+    changed = False
+    for heading in list(card.find_all(["h2", "h3", "h4"])):
+        if heading is section_h2:
+            continue
+        classes = heading.get("class") or []
+        in_label = bool(
+            heading.find_parent(class_=lambda value: value and "mantine-Accordion-label" in value)
+        )
+        if in_label:
+            if heading.name != "h3":
+                heading.name = "h3"
+                changed = True
+            classes = [cls for cls in classes if cls not in (SECTION_H2_CLASS, SECTION_H4_CLASS)]
+            if SECTION_H3_CLASS not in classes:
+                classes.append(SECTION_H3_CLASS)
+                changed = True
+        elif heading.name == "h2":
+            heading.name = "h3"
+            classes = [cls for cls in classes if cls != SECTION_H2_CLASS]
+            if SECTION_H3_CLASS not in classes:
+                classes.append(SECTION_H3_CLASS)
+            changed = True
+        elif heading.name == "h3":
+            heading.name = "h4"
+            classes = [cls for cls in classes if cls not in (SECTION_H2_CLASS, SECTION_H3_CLASS)]
+            if SECTION_H4_CLASS not in classes:
+                classes.append(SECTION_H4_CLASS)
+            changed = True
+        elif SECTION_H4_CLASS not in classes:
+            classes.append(SECTION_H4_CLASS)
+            changed = True
+        heading["class"] = classes
+    return changed
+
+
+def repair_about_card_layout(content: Tag) -> bool:
+    """Move about-page section titles into white cards as h2."""
+    changed = False
+    for block in content.select(".mantine-wnhdd8"):
+        card = block.select_one(":scope > .css-sdnfq3")
+        header = block.select_one(":scope > .mantine-j9g3bi")
+        if header and card:
+            heading = header.find(["h2", "h3", "h4"])
+            if heading:
+                _ensure_section_h2(heading)
+                card.insert(0, heading.extract())
+                changed = True
+            if not header.find(True) and not header.get_text(strip=True):
+                header.decompose()
+                changed = True
+        if not card:
+            continue
+        section_h2 = card.select_one(":scope > h2.internal-section-h2, :scope > h2")
+        if section_h2:
+            _ensure_section_h2(section_h2)
+            if demote_about_card_subheadings(card, section_h2):
+                changed = True
+    return changed
+
+
+def wrap_about_intro_card(main_col: Tag, soup: BeautifulSoup) -> bool:
+    intros = main_col.select(
+        ":scope > p.css-tualuh.internal-article-intro, :scope > p.internal-article-intro"
+    )
+    if not intros:
+        return False
+    if intros[0].find_parent(class_=lambda value: value and "internal-article-intro-card" in value):
+        return False
+    card = soup.new_tag(
+        "div",
+        attrs={"class": "css-sdnfq3 mantine-1hdrj7p internal-article-intro-card"},
+    )
+    intros[0].insert_before(card)
+    for paragraph in intros:
+        card.append(paragraph.extract())
+    return True
+
+
+def flatten_sections_wrap(root: Tag) -> bool:
+    changed = False
+    while True:
+        wrap = root.select_one(".mantine-1jhay8j")
+        if not wrap:
+            break
+        for child in list(wrap.children):
+            if isinstance(child, Tag):
+                wrap.insert_before(child.extract())
+                changed = True
+        wrap.decompose()
+        changed = True
+    return changed
+
+
+def flatten_about_sections_wrap(main_col: Tag) -> bool:
+    return flatten_sections_wrap(main_col)
+
+
+def repair_documents_page_layout(content: Tag) -> bool:
+    main_col = content.select_one(".css-7nll2u")
+    if not main_col:
+        return False
+    changed = False
+    content_host = content.find_parent(class_=lambda value: value and "internal-main" in value)
+    if content_host and remove_stage_step_badges(content_host):
+        changed = True
+    for label in content.select(".mantine-Accordion-label h4"):
+        label.name = "h2"
+        classes = label.get("class") or []
+        if SECTION_H2_CLASS not in classes:
+            label["class"] = [*classes, SECTION_H2_CLASS]
+        changed = True
+    if repair_about_card_layout(content):
+        changed = True
+    if flatten_sections_wrap(main_col):
+        changed = True
+    if repair_about_card_layout(content):
+        changed = True
+    return changed
+
+
+def repair_about_page_layout(content: Tag, soup: BeautifulSoup) -> bool:
+    main_col = content.select_one(".css-7nll2u")
+    if not main_col:
+        return False
+    changed = repair_about_card_layout(content)
+    if wrap_about_intro_card(main_col, soup):
+        changed = True
+    if flatten_sections_wrap(main_col):
+        changed = True
+    if repair_about_card_layout(content):
+        changed = True
+    return changed
+
+
+def apply_heading_normalization(soup: BeautifulSoup) -> bool:
+    changed = False
+    main = soup.select_one("main")
+    path = normalize_path(main.get("data-internal-layout-baked") or "") if main else ""
+    for content in soup.select(".internal-article-content"):
+        if path in ABOUT_STYLE_PAGES:
+            if repair_about_page_layout(content, soup):
+                changed = True
+        elif path == "/documents/":
+            if repair_documents_page_layout(content):
+                changed = True
+        elif path == "/download/":
+            pass
+        elif path == "/privacy-policy/":
+            if repair_privacy_page_layout(soup, content):
+                changed = True
+        elif normalize_heading_levels(content):
+            changed = True
+        if flatten_article_accordions(content):
+            changed = True
+        if fix_orphan_h4_headings(content):
+            changed = True
+    return changed
+
+
+def get_section_title(section: Tag) -> str:
+    heading = section.select_one(
+        ":scope > h2.internal-section-h2, :scope > h2, "
+        ".mantine-Accordion-label h2, .mantine-Accordion-label h4, "
+        ".mantine-Accordion-label .mantine-Title-root, "
+        ".mantine-Accordion-label .mantine-Text-root"
+    )
+    if heading:
+        title = heading.get_text(strip=True)
+        if title:
+            return title
+    section_id = section.get("id") or ""
+    return section_id.replace("_", " ") if section_id else ""
+
+
+TOC_ENTRY_SELECTOR = (
+    ".css-sdnfq3[id], section[id], .mantine-wnhdd8[id], "
+    ".mantine-1ng34cm[id], .css-g0tr8[id], .css-bw3xdm[id], h2[id], h3[id]"
+)
+
+
+def toc_entry_title(el: Tag) -> str:
+    if "css-bw3xdm" in (el.get("class") or []):
+        headings = el.find_all(["h2", "h3"], limit=2)
+        if headings:
+            first = headings[0]
+            if first.name == "h3":
+                return first.get_text(strip=True).rstrip(":")
+            return first.get_text(strip=True)
+        section_id = el.get("id") or ""
+        return section_id.replace("_", " ") if section_id else ""
+
+    if "mantine-wnhdd8" in (el.get("class") or []):
+        heading = el.select_one(
+            ".css-sdnfq3 > h2.internal-section-h2, .css-sdnfq3 > h2, "
+            ".mantine-j9g3bi > h2, h2, h3"
+        )
+        if heading:
+            text = heading.get_text(strip=True)
+            if text:
+                return text
+    title = get_section_title(el)
+    if title:
+        return title
+    heading = el.select_one("h2, h3, h4")
+    if heading:
+        text = heading.get_text(strip=True)
+        if text:
+            return text
+    if el.name in {"h2", "h3", "h4"}:
+        text = el.get_text(strip=True)
+        if text:
+            return text
+    section_id = el.get("id") or ""
+    return section_id.replace("_", " ") if section_id else ""
+
+
+def ukrainian_document_count_label(count: int) -> str:
+    if count == 1:
+        return "1 документ"
+    if 2 <= count <= 4:
+        return f"{count} документи"
+    return f"{count} документів"
+
+
+def _normalize_section_id(value: str) -> str:
+    return (
+        value.replace("«", '"')
+        .replace("»", '"')
+        .replace("\u201c", '"')
+        .replace("\u201d", '"')
+    )
+
+
+def find_toc_section(main_col: Tag, section_id: str) -> Tag | None:
+    if not section_id or not main_col:
+        return None
+    match = main_col.find(id=section_id)
+    if match:
+        return match
+    target = _normalize_section_id(section_id)
+    for candidate in main_col.select(TOC_ENTRY_SELECTOR):
+        candidate_id = candidate.get("id") or ""
+        if candidate_id == section_id or _normalize_section_id(candidate_id) == target:
+            return candidate
+    return None
+
+
+def count_section_downloads(section: Tag | None) -> int:
+    if not section:
+        return 0
+    scope = section
+    classes = section.get("class") or []
+    if section.name in {"h2", "h3"} or "internal-section-h2" in classes:
+        card = section.find_parent(class_=lambda value: value and "css-sdnfq3" in value)
+        if card:
+            scope = card
+    return len(scope.select('a.css-uex5rt img[alt="file-icon"]'))
+
+
+def parse_legacy_toc_doc_count(block: Tag) -> int:
+    match = re.search(r"(\d+)", block.get_text(strip=True))
+    return int(match.group(1)) if match else 0
+
+
+def build_toc_doc_badge_html(count: int) -> str:
+    if count <= 0:
+        return ""
+    label = ukrainian_document_count_label(count)
+    if count == 1:
+        aria = "1 документ для завантаження"
+    elif count <= 4:
+        aria = f"{count} документи для завантаження"
+    else:
+        aria = f"{count} документів для завантаження"
+    return (
+        f'<span class="internal-toc-doc-badge" aria-label="{escape(aria, quote=True)}">'
+        f'<img src="{TOC_DOC_BADGE_ICON}" alt="" width="12" height="12" aria-hidden="true" />'
+        f'<span class="internal-toc-doc-badge__text">{escape(label)}</span>'
+        "</span>"
+    )
+
+
+def _toc_item_container(link: Tag) -> Tag:
+    container = link.find_parent(
+        class_=lambda value: value
+        and ("mantine-12e74aa" in value or "internal-toc-item-text" in value)
+    )
+    return container if container else link.parent
+
+
+def normalize_toc_document_badges(toc_wrap: Tag, main_col: Tag | None = None) -> bool:
+    changed = False
+    if not main_col:
+        layout = toc_wrap.find_parent(
+            class_=lambda value: value and "internal-article-layout" in value
+        )
+        if layout:
+            main_col = layout.select_one(
+                ".internal-article-content .css-7nll2u, .css-7nll2u"
+            )
+
+    for item in toc_wrap.select(".mantine-List-item"):
+        link = item.select_one("a[href*='#']")
+        if not link:
+            continue
+        container = _toc_item_container(link)
+        href = link.get("href") or ""
+        hash_idx = href.find("#")
+        section_id = unquote(href[hash_idx + 1 :]) if hash_idx >= 0 else ""
+
+        legacy = container.select_one(".mantine-16hexn0")
+        doc_count = 0
+        if legacy:
+            doc_count = parse_legacy_toc_doc_count(legacy)
+            legacy.decompose()
+            changed = True
+        else:
+            badge_text = container.select_one(".internal-toc-doc-badge__text")
+            if badge_text:
+                doc_count = parse_legacy_toc_doc_count(badge_text)
+                continue
+
+        if doc_count == 0 and main_col and section_id:
+            section = find_toc_section(main_col, section_id)
+            if section:
+                actual_id = section.get("id")
+                if actual_id and actual_id != section_id and hash_idx >= 0:
+                    link["href"] = "#" + quote(actual_id, safe="")
+                doc_count = count_section_downloads(section)
+
+        title = re.sub(r"\s*x\s*\d+\s*$", "", link.get_text(strip=True), flags=re.IGNORECASE).strip()
+        if title != link.get_text(strip=True):
+            link.string = title
+            changed = True
+
+        classes = container.get("class") or []
+        if "internal-toc-item-text" not in classes:
+            container["class"] = [*classes, "internal-toc-item-text"]
+            changed = True
+
+        existing_badge = container.select_one(".internal-toc-doc-badge")
+        if existing_badge:
+            existing_badge.decompose()
+            changed = True
+
+        badge_html = build_toc_doc_badge_html(doc_count)
+        if badge_html:
+            container.append(BeautifulSoup(badge_html, "html.parser"))
+            changed = True
+
+    return changed
+
+
+def collect_toc_entries(main_col: Tag) -> list[tuple[str, str, int]]:
+    entries: list[tuple[str, str, int]] = []
+    seen: set[str] = set()
+    for el in main_col.select(TOC_ENTRY_SELECTOR):
+        section_id = el.get("id")
+        if not section_id or section_id in seen:
+            continue
+        seen.add(section_id)
+        title = toc_entry_title(el)
+        if not title:
+            continue
+        doc_count = count_section_downloads(el)
+        entries.append((f"#{quote(section_id, safe='')}", title, doc_count))
+    return entries
+
+
+def toc_nav_items(entries: list[tuple[str, str, int]] | list[tuple[str, str]]) -> list[tuple[str, str]]:
+    nav: list[tuple[str, str]] = []
+    for item in entries:
+        if len(item) >= 2:
+            nav.append((item[0], item[1]))
+    return nav
+
+
+def collect_toc_from_wrap(toc_wrap: Tag) -> list[tuple[str, str]]:
+    items: list[tuple[str, str]] = []
+    for link in toc_wrap.select(".mantine-List-item a[href*='#']"):
+        href = link.get("href") or ""
+        title = link.get_text(strip=True)
+        if href and title:
+            hash_idx = href.find("#")
+            if hash_idx >= 0:
+                href = href[hash_idx:]
+            items.append((href, title))
+    return items
+
+
+def collect_toc_doc_counts_from_wrap(toc_wrap: Tag) -> list[int]:
+    counts: list[int] = []
+    for item in toc_wrap.select(".mantine-List-item"):
+        badge_text = item.select_one(".internal-toc-doc-badge__text")
+        if badge_text:
+            counts.append(parse_legacy_toc_doc_count(badge_text))
+        else:
+            counts.append(0)
+    return counts
+
+
+def build_toc_list_item_html(href: str, title: str, doc_count: int = 0) -> str:
+    badge = build_toc_doc_badge_html(doc_count)
+    return (
+        '<li class="mantine-List-item mantine-riob0u" data-with-icon="true">'
+        '<div class="___ref-itemWrapper mantine-iwg4hh mantine-List-itemWrapper">'
+        '<span class="mantine-uezznj mantine-List-itemIcon">'
+        '<div class="mantine-ThemeIcon-root mantine-1tnkqq"></div></span>'
+        f'<span><div class="internal-toc-item-text mantine-12e74aa">'
+        f'<a class="css-16clbz5" href="{escape(href, quote=True)}">'
+        f"{escape(title)}</a>{badge}</div></span></div></li>"
+    )
+
+
+def build_generated_toc_html(entries: list[tuple[str, str, int]]) -> str:
+    items = "".join(
+        build_toc_list_item_html(href, title, doc_count)
+        for href, title, doc_count in entries
+    )
+    return (
+        '<div class="css-gfn0ts mantine-1fr50if internal-toc-generated"><div class="mantine-1fr50if">'
+        '<h4 class="mantine-Text-root mantine-Title-root mantine-1pop5c3">Зміст сторінки</h4>'
+        f'<ul class="mantine-List-root mantine-e6qakj">{items}</ul></div></div>'
+    )
+
+
+def generated_toc_needs_upgrade(toc_wrap: Tag) -> bool:
+    generated = toc_wrap.select_one(".internal-toc-generated")
+    if not generated:
+        return True
+    if not (
+        generated.select_one("h4.mantine-1pop5c3")
+        and generated.select_one("ul.mantine-e6qakj")
+        and generated.select_one(".mantine-List-item.mantine-riob0u")
+    ):
+        return True
+    if toc_wrap.select_one(".mantine-16hexn0"):
+        return True
+    if not generated.select_one(".internal-toc-item-text"):
+        return True
+    return False
+
+
+def ensure_generated_toc(toc_wrap: Tag, main_col: Tag) -> bool:
+    if toc_wrap.select_one(".css-gfn0ts:not(.internal-toc-generated), .css-12mrpgq"):
+        return False
+
+    entries = collect_toc_entries(main_col)
+    if not entries:
+        return False
+
+    generated = toc_wrap.select_one(".internal-toc-generated")
+    if (
+        generated
+        and collect_toc_from_wrap(toc_wrap) == [(href, title) for href, title, _ in entries]
+        and collect_toc_doc_counts_from_wrap(toc_wrap) == [count for _, _, count in entries]
+        and not generated_toc_needs_upgrade(toc_wrap)
+    ):
+        return True
+
+    new_gen = BeautifulSoup(build_generated_toc_html(entries), "html.parser")
+    if generated:
+        generated.replace_with(new_gen)
+    else:
+        toc_wrap.append(new_gen)
+    return True
+
+
+def expand_accordions(root: Tag) -> None:
+    for control in root.select("[data-accordion-control]"):
+        control["aria-expanded"] = "true"
+        control["data-active"] = "true"
+        panel_id = control.get("aria-controls")
+        panel = root.find(id=panel_id) if panel_id else None
+        if panel:
+            panel["aria-hidden"] = "false"
+            style = panel.get("style") or ""
+            if "display" not in style:
+                panel["style"] = (style + ";display:block!important;height:auto!important;overflow:visible!important").strip(";")
+            for node in panel.select('[style*="opacity"]'):
+                node["style"] = re.sub(r"opacity:\s*[^;]+", "opacity:1", node.get("style") or "") or "opacity:1"
+    for item in root.select(".mantine-Accordion-item"):
+        item["data-active"] = "true"
+    for chevron in root.select(".mantine-Accordion-chevron, [class*='Accordion-chevron']"):
+        chevron["data-rotate"] = "true"
+
+
+def _accordion_panel_content_nodes(content_host: Tag) -> list[Tag]:
+    inner = content_host.select_one(".mantine-1fr50if")
+    host = inner if inner else content_host
+    nodes = [child for child in list(host.children) if isinstance(child, Tag)]
+    if len(nodes) == 1 and nodes[0].name == "div":
+        classes = nodes[0].get("class") or []
+        if not classes:
+            inner_nodes = [child for child in nodes[0].children if isinstance(child, Tag)]
+            if inner_nodes:
+                nodes = inner_nodes
+    if nodes:
+        return [node.extract() for node in nodes]
+    if content_host.get_text(strip=True):
+        return [content_host.extract()]
+    return []
+
+
+def _extract_accordion_heading(item: Tag) -> Tag | None:
+    label = item.select_one(".mantine-Accordion-label")
+    if not label:
+        return None
+    heading = label.select_one(
+        "h2, h4, .mantine-Title-root, .mantine-Text-root"
+    )
+    if not heading:
+        return None
+    _ensure_section_h2(heading)
+    return heading.extract()
+
+
+def _accordion_wrapper(item: Tag, card: Tag) -> Tag | None:
+    wrapper = item.find_parent(attrs={"data-accordion": True})
+    if wrapper and wrapper in card.descendants:
+        return wrapper
+    parent = item.parent
+    while parent and parent is not card:
+        classes = parent.get("class") or []
+        if parent.get("data-accordion") or "mantine-5n4x4z" in classes:
+            return parent
+        parent = parent.parent
+    return item.parent if item.parent in card.descendants else None
+
+
+def flatten_article_accordions(root: Tag) -> bool:
+    """Replace dead Mantine accordions with flat h2 + body inside white cards."""
+    changed = False
+    for card in root.select(".css-sdnfq3"):
+        for item in list(card.select(".mantine-Accordion-item")):
+            heading = _extract_accordion_heading(item)
+            panel = item.select_one(".mantine-Accordion-panel")
+            if not heading or not panel:
+                continue
+            content_host = panel.select_one(".mantine-Accordion-content") or panel
+            content_nodes = _accordion_panel_content_nodes(content_host)
+            if not content_nodes:
+                continue
+            wrapper = _accordion_wrapper(item, card)
+            if not wrapper:
+                wrapper = item
+            wrapper.replace_with(heading, *content_nodes)
+            changed = True
+
+    for accordion in list(root.select("[data-accordion]")):
+        if accordion.get_text(strip=True):
+            continue
+        if accordion.select(".mantine-Accordion-item"):
+            continue
+        accordion.decompose()
+        changed = True
+    return changed
+
+
+INTRO_BODY_CLASSES = frozenset({"css-tualuh", "css-1xvvgf7"})
+
+
+def mark_intro_text(main_col: Tag) -> None:
+    for el in main_col.select(".internal-article-intro"):
+        el["class"] = [c for c in el.get("class", []) if c != "internal-article-intro"]
+
+    def is_intro(el: Tag) -> bool:
+        classes = el.get("class") or []
+        return (
+            (
+                "mantine-Text-root" in classes
+                or el.name == "p"
+                or INTRO_BODY_CLASSES.intersection(classes)
+            )
+            and "css-370pco" not in classes
+            and "mantine-172zsy7" not in classes
+            and bool(el.get_text(strip=True))
+        )
+
+    for wrapper in [main_col, *main_col.select(".mantine-1fr50if")]:
+        for child in wrapper.children:
+            if not isinstance(child, Tag):
+                continue
+            if "css-sdnfq3" in (child.get("class") or []):
+                continue
+            if is_intro(child):
+                child_classes = child.get("class") or []
+                if "internal-article-intro" not in child_classes:
+                    child["class"] = [*child_classes, "internal-article-intro"]
+
+
+def remove_duplicate_title(main_col: Tag, title_text: str) -> None:
+    if not title_text:
+        return
+    title_block = main_col.select_one(".css-153xe5m")
+    if title_block:
+        title_block.decompose()
+    for heading in main_col.find_all(["h1", "h2", "h3"]):
+        if heading.get_text(strip=True) == title_text:
+            heading.decompose()
+
+
+def fix_toc_wrap(toc_wrap: Tag) -> list[tuple[str, str]]:
+    for heading in toc_wrap.select("h4.mantine-Title-root"):
+        if heading.get_text(strip=True) == "Зміст":
+            heading.string = "Зміст сторінки"
+        classes = heading.get("class") or []
+        if "mantine-1pop5c3" not in classes:
+            heading["class"] = [*classes, "mantine-1pop5c3"]
+    layout = toc_wrap.find_parent(
+        class_=lambda value: value and "internal-article-layout" in value
+    )
+    main_col = None
+    if layout:
+        main_col = layout.select_one(".internal-article-content .css-7nll2u, .css-7nll2u")
+    if normalize_toc_document_badges(toc_wrap, main_col):
+        pass
+    if generated_toc_needs_upgrade(toc_wrap):
+        if main_col:
+            ensure_generated_toc(toc_wrap, main_col)
+    for link in toc_wrap.select("a[href*='#']"):
+        href = link.get("href") or ""
+        hash_idx = href.find("#")
+        if hash_idx >= 0:
+            link["href"] = href[hash_idx:]
+    return collect_toc_from_wrap(toc_wrap)
+
+
+def normalize_document_download_blocks(soup: BeautifulSoup) -> bool:
+    changed = False
+    for img in soup.select('.internal-article-content a.css-uex5rt img[alt="file-icon"]'):
+        src = img.get("src") or ""
+        if DOCUMENT_DOWNLOAD_ICON not in src:
+            img["src"] = DOCUMENT_DOWNLOAD_ICON
+            changed = True
+        if img.get("width"):
+            del img["width"]
+            changed = True
+        if img.get("height"):
+            del img["height"]
+            changed = True
+    return changed
+
+
+BULLET_PREFIX_RE = re.compile(
+    r"^\s*(?:[\-–—−‐‒↓•]|[а-яіїєґa-zA-Z][\)\.])\s*",
+    re.IGNORECASE,
+)
+NUMBERED_PREFIX_RE = re.compile(r"^\s*\d+[\)\.]\s*")
+BULLET_DIV_CLASS = "mantine-172zsy7"
+ARTICLE_LIST_CLASS = "internal-article-list"
+NUMBERED_LIST_CLASS = "internal-article-numbered-list"
+DOUBLE_BR_RE = re.compile(r"(?:<br\s*/?>\s*){2,}")
+LEADING_WS_RE = re.compile(r"^[\s\u00a0\t]+")
+INTERNAL_WS_RE = re.compile(r"[ \u00a0\t]+")
+
+
+def _segment_text(segment: list) -> str:
+    wrapper = BeautifulSoup("", "html.parser")
+    container = wrapper.new_tag("div")
+    for node in segment:
+        if isinstance(node, NavigableString):
+            container.append(NavigableString(str(node)))
+        else:
+            container.append(node)
+    return container.get_text(" ", strip=True)
+
+
+def _is_bullet_segment(segment: list) -> bool:
+    return bool(BULLET_PREFIX_RE.match(_segment_text(segment)))
+
+
+def _strip_bullet_prefix(container: Tag) -> None:
+    for node in container.descendants:
+        if isinstance(node, NavigableString):
+            stripped = BULLET_PREFIX_RE.sub("", str(node), count=1)
+            if stripped != str(node):
+                node.replace_with(stripped)
+                return
+
+
+def _split_nodes_by_br(nodes: list) -> list[list]:
+    segments: list[list] = [[]]
+    for node in nodes:
+        if isinstance(node, Tag) and node.name == "br":
+            if segments[-1]:
+                segments.append([])
+            continue
+        segments[-1].append(node)
+    return [segment for segment in segments if segment]
+
+
+def _append_nodes(parent: Tag, segment: list) -> None:
+    for node in segment:
+        parent.append(node)
+
+
+def _make_bullet_list(soup: BeautifulSoup, segments: list[list]) -> Tag:
+    ul = soup.new_tag("ul", attrs={"class": ARTICLE_LIST_CLASS})
+    for segment in segments:
+        li = soup.new_tag("li")
+        _append_nodes(li, segment)
+        _strip_bullet_prefix(li)
+        ul.append(li)
+    return ul
+
+
+def _trim_edge_breaks(nodes: list) -> list:
+    trimmed = list(nodes)
+    while trimmed and (
+        (isinstance(trimmed[-1], Tag) and trimmed[-1].name == "br")
+        or (isinstance(trimmed[-1], NavigableString) and not str(trimmed[-1]).strip())
+    ):
+        trimmed.pop()
+    while trimmed and (
+        (isinstance(trimmed[0], Tag) and trimmed[0].name == "br")
+        or (isinstance(trimmed[0], NavigableString) and not str(trimmed[0]).strip())
+    ):
+        trimmed.pop(0)
+    return trimmed
+
+
+def _meaningful_br_count(container: Tag) -> int:
+    return sum(
+        1
+        for node in _trim_edge_breaks(list(container.contents))
+        if isinstance(node, Tag) and node.name == "br"
+    )
+
+
+def _div_is_bullet_only(div: Tag) -> bool:
+    classes = div.get("class") or []
+    if BULLET_DIV_CLASS not in classes:
+        return False
+    if div.find("ul", class_=ARTICLE_LIST_CLASS):
+        return False
+    text = div.get_text(" ", strip=True)
+    if not BULLET_PREFIX_RE.match(text):
+        return False
+    return _meaningful_br_count(div) == 0
+
+
+def _is_annotation_div(div: Tag) -> bool:
+    classes = div.get("class") or []
+    if BULLET_DIV_CLASS not in classes:
+        return False
+    text = div.get_text(" ", strip=True)
+    if BULLET_PREFIX_RE.match(text):
+        return False
+    return text.startswith("(") and ")" in text
+
+
+def _convert_singleton_bullet_divs(soup: BeautifulSoup, root: Tag) -> bool:
+    changed = False
+    for div in list(root.select(f".{BULLET_DIV_CLASS}")):
+        if not _div_is_bullet_only(div):
+            continue
+        ul = _make_bullet_list(soup, [_trim_edge_breaks(list(div.contents))])
+        div.replace_with(ul)
+        changed = True
+    return changed
+
+
+def _merge_bullet_lists_across_annotations(soup: BeautifulSoup, root: Tag) -> bool:
+    changed = False
+    for parent in list(root.find_all(True)):
+        child_tags = [child for child in parent.children if isinstance(child, Tag)]
+        if not child_tags:
+            continue
+        i = 0
+        while i < len(child_tags):
+            child = child_tags[i]
+            if child.name != "ul" or ARTICLE_LIST_CLASS not in (child.get("class") or []):
+                i += 1
+                continue
+            group = [child]
+            j = i + 1
+            while j < len(child_tags):
+                nxt = child_tags[j]
+                if _is_annotation_div(nxt):
+                    j += 1
+                    continue
+                if nxt.name == "ul" and ARTICLE_LIST_CLASS in (nxt.get("class") or []):
+                    group.append(nxt)
+                    j += 1
+                    continue
+                if _div_is_bullet_only(nxt):
+                    group.append(nxt)
+                    j += 1
+                    continue
+                break
+            if len(group) < 2:
+                i += 1
+                continue
+            anchor = group[0]
+            merged = soup.new_tag("ul", attrs={"class": ARTICLE_LIST_CLASS})
+            for item in group:
+                if item.name == "ul":
+                    for li in list(item.find_all("li", recursive=False)):
+                        merged.append(li.extract())
+                    continue
+                li = soup.new_tag("li")
+                for node in _trim_edge_breaks(list(item.contents)):
+                    li.append(node)
+                _strip_bullet_prefix(li)
+                merged.append(li)
+            anchor.insert_before(merged)
+            for item in group:
+                item.decompose()
+            changed = True
+            child_tags = [child for child in parent.children if isinstance(child, Tag)]
+            i = child_tags.index(merged) + 1 if merged in child_tags else j
+    return changed
+
+
+def _repair_bullet_div(soup: BeautifulSoup, div: Tag) -> bool:
+    if div.find("ul", class_=ARTICLE_LIST_CLASS):
+        return False
+    if not re.search(r"<br\s*/?>", str(div), re.I):
+        return False
+
+    nodes = list(div.contents)
+    segments = _split_nodes_by_br(nodes)
+    bullet_count = sum(1 for segment in segments if _is_bullet_segment(segment))
+    if bullet_count < 1 or len(segments) < 2:
+        return False
+
+    if bullet_count >= 2:
+        bullet_indices = [index for index, segment in enumerate(segments) if _is_bullet_segment(segment)]
+        first_bullet = bullet_indices[0]
+        last_bullet = bullet_indices[-1]
+        for index in range(first_bullet, last_bullet + 1):
+            if not _is_bullet_segment(segments[index]):
+                return False
+
+    div.clear()
+    bullet_batch: list[list] = []
+    changed = False
+
+    def flush_batch() -> None:
+        nonlocal changed
+        if not bullet_batch:
+            return
+        div.append(_make_bullet_list(soup, bullet_batch))
+        bullet_batch.clear()
+        changed = True
+
+    for index, segment in enumerate(segments):
+        if _is_bullet_segment(segment):
+            bullet_batch.append(segment)
+            continue
+        flush_batch()
+        _append_nodes(div, segment)
+        next_segment = segments[index + 1] if index + 1 < len(segments) else None
+        if next_segment and not _is_bullet_segment(next_segment):
+            div.append(soup.new_tag("br"))
+    flush_batch()
+    return changed
+
+
+def _direct_edge_list(container: Tag, edge: str) -> Tag | None:
+    child_tags = [child for child in container.children if isinstance(child, Tag)]
+    if not child_tags:
+        return None
+    target = child_tags[-1] if edge == "last" else child_tags[0]
+    if target.name != "ul" or ARTICLE_LIST_CLASS not in (target.get("class") or []):
+        return None
+    return target
+
+
+def _merge_adjacent_div_bullet_lists(root: Tag) -> bool:
+    changed = False
+    for parent in list(root.find_all(True)):
+        child_tags = [child for child in parent.children if isinstance(child, Tag)]
+        i = 0
+        while i < len(child_tags) - 1:
+            current = child_tags[i]
+            nxt = child_tags[i + 1]
+            classes = current.get("class") or []
+            next_classes = nxt.get("class") or []
+            if BULLET_DIV_CLASS not in classes or BULLET_DIV_CLASS not in next_classes:
+                i += 1
+                continue
+            trailing = _direct_edge_list(current, "last")
+            leading = _direct_edge_list(nxt, "first")
+            if not trailing or not leading:
+                i += 1
+                continue
+            for li in list(leading.find_all("li", recursive=False)):
+                trailing.append(li.extract())
+            leading.decompose()
+            changed = True
+            child_tags = [child for child in parent.children if isinstance(child, Tag)]
+            i += 1
+    return changed
+
+
+def _p_is_bullet_only(p: Tag) -> bool:
+    if p.name != "p":
+        return False
+    classes = p.get("class") or []
+    if PRIVACY_BODY_P_CLASS not in classes:
+        return False
+    if p.find("ul", class_=ARTICLE_LIST_CLASS):
+        return False
+    text = p.get_text(" ", strip=True)
+    if not BULLET_PREFIX_RE.match(text):
+        return False
+    return _meaningful_br_count(p) == 0
+
+
+def _convert_singleton_bullet_paragraphs(soup: BeautifulSoup, root: Tag) -> bool:
+    changed = False
+    for p in list(root.select(f"p.{PRIVACY_BODY_P_CLASS}")):
+        if not _p_is_bullet_only(p):
+            continue
+        ul = _make_bullet_list(soup, [_trim_edge_breaks(list(p.contents))])
+        p.replace_with(ul)
+        changed = True
+    return changed
+
+
+def _merge_consecutive_bullet_paragraphs(soup: BeautifulSoup, root: Tag) -> bool:
+    changed = False
+    for parent in list(root.find_all(True)):
+        child_tags = [child for child in parent.children if isinstance(child, Tag)]
+        if not child_tags:
+            continue
+        i = 0
+        while i < len(child_tags):
+            child = child_tags[i]
+            if not _p_is_bullet_only(child):
+                i += 1
+                continue
+            group = [child]
+            j = i + 1
+            while j < len(child_tags) and _p_is_bullet_only(child_tags[j]):
+                group.append(child_tags[j])
+                j += 1
+            ul = _make_bullet_list(
+                soup,
+                [_trim_edge_breaks(list(item.contents)) for item in group],
+            )
+            group[0].insert_before(ul)
+            for item in group:
+                item.decompose()
+            changed = True
+            child_tags = [child for child in parent.children if isinstance(child, Tag)]
+            i = child_tags.index(ul) + 1 if ul in child_tags else j
+    return changed
+
+
+def _dedupe_bullet_list_intro_paragraph(root: Tag) -> bool:
+    changed = False
+    for ul in root.select(f"ul.{ARTICLE_LIST_CLASS}"):
+        prev = ul.find_previous_sibling()
+        while prev and isinstance(prev, Tag) and prev.name == "style":
+            prev = prev.find_previous_sibling()
+        if not prev or prev.name != "p":
+            continue
+        first_li = ul.find("li", recursive=False)
+        if not first_li:
+            continue
+        if prev.get_text(" ", strip=True) != first_li.get_text(" ", strip=True):
+            continue
+        first_li.decompose()
+        changed = True
+    return changed
+
+
+def _merge_consecutive_bullet_divs(soup: BeautifulSoup, root: Tag) -> bool:
+    changed = False
+    for parent in list(root.find_all(True)):
+        child_tags = [child for child in parent.children if isinstance(child, Tag)]
+        if not child_tags:
+            continue
+        i = 0
+        while i < len(child_tags):
+            child = child_tags[i]
+            if not _div_is_bullet_only(child):
+                i += 1
+                continue
+            group = [child]
+            j = i + 1
+            while j < len(child_tags) and _div_is_bullet_only(child_tags[j]):
+                group.append(child_tags[j])
+                j += 1
+            ul = _make_bullet_list(soup, [_trim_edge_breaks(list(item.contents)) for item in group])
+            group[0].insert_before(ul)
+            for item in group:
+                item.decompose()
+            changed = True
+            child_tags = [child for child in parent.children if isinstance(child, Tag)]
+            i = child_tags.index(ul) + 1 if ul in child_tags else j
+    return changed
+
+
+LONE_LI_WRAPPER_CLASS = "css-1vd3b3g"
+LONE_LI_SHELL_CLASS = "mantine-1jggmkl"
+
+
+def _div_is_lone_bullet_li_div(div: Tag) -> bool:
+    classes = div.get("class") or []
+    if LONE_LI_WRAPPER_CLASS not in classes or LONE_LI_SHELL_CLASS not in classes:
+        return False
+    if div.find("ul", class_=ARTICLE_LIST_CLASS) or div.find("ol", class_=NUMBERED_LIST_CLASS):
+        return False
+    lis = div.find_all("li", recursive=False)
+    if len(lis) != 1:
+        return False
+    text = lis[0].get_text(" ", strip=True)
+    return bool(BULLET_PREFIX_RE.match(text))
+
+
+def _li_from_lone_bullet_div(soup: BeautifulSoup, div: Tag) -> Tag:
+    source_li = div.find("li", recursive=False)
+    li = soup.new_tag("li")
+    for node in _trim_edge_breaks(list(source_li.contents)):
+        if isinstance(node, NavigableString):
+            li.append(NavigableString(str(node)))
+        else:
+            li.append(node.extract())
+    _strip_bullet_prefix(li)
+    _strip_edge_breaks_from_tag(li)
+    return li
+
+
+def _merge_consecutive_lone_li_bullet_divs(soup: BeautifulSoup, root: Tag) -> bool:
+    changed = False
+    for parent in list(root.find_all(True)):
+        child_tags = [child for child in parent.children if isinstance(child, Tag)]
+        if not child_tags:
+            continue
+        i = 0
+        while i < len(child_tags):
+            child = child_tags[i]
+            if not _div_is_lone_bullet_li_div(child):
+                i += 1
+                continue
+            group = [child]
+            j = i + 1
+            while j < len(child_tags) and _div_is_lone_bullet_li_div(child_tags[j]):
+                group.append(child_tags[j])
+                j += 1
+            ul = soup.new_tag("ul", attrs={"class": ARTICLE_LIST_CLASS})
+            for item in group:
+                ul.append(_li_from_lone_bullet_div(soup, item))
+            group[0].insert_before(ul)
+            for item in group:
+                item.decompose()
+            changed = True
+            child_tags = [child for child in parent.children if isinstance(child, Tag)]
+            i = child_tags.index(ul) + 1 if ul in child_tags else j
+    return changed
+
+
+def _is_numbered_segment(segment: list) -> bool:
+    return bool(NUMBERED_PREFIX_RE.match(_segment_text(segment)))
+
+
+def _strip_numbered_prefix(container: Tag) -> None:
+    for node in container.descendants:
+        if isinstance(node, NavigableString):
+            stripped = NUMBERED_PREFIX_RE.sub("", str(node), count=1)
+            if stripped != str(node):
+                node.replace_with(stripped)
+                return
+
+
+def _make_numbered_list(soup: BeautifulSoup, segments: list[list]) -> Tag:
+    ol = soup.new_tag("ol", attrs={"class": NUMBERED_LIST_CLASS})
+    for segment in segments:
+        li = soup.new_tag("li")
+        _append_nodes(li, segment)
+        _strip_numbered_prefix(li)
+        ol.append(li)
+    return ol
+
+
+def _div_is_numbered_only(div: Tag) -> bool:
+    classes = div.get("class") or []
+    if BULLET_DIV_CLASS not in classes:
+        return False
+    if div.find("ul", class_=ARTICLE_LIST_CLASS) or div.find("ol", class_=NUMBERED_LIST_CLASS):
+        return False
+    text = div.get_text(" ", strip=True)
+    if not NUMBERED_PREFIX_RE.match(text):
+        return False
+    if BULLET_PREFIX_RE.match(text):
+        return False
+    return _meaningful_br_count(div) == 0
+
+
+def _repair_numbered_div(soup: BeautifulSoup, div: Tag) -> bool:
+    if div.find("ol", class_=NUMBERED_LIST_CLASS):
+        return False
+    if not re.search(r"<br\s*/?>", str(div), re.I):
+        return False
+
+    nodes = list(div.contents)
+    segments = _split_nodes_by_br(nodes)
+    numbered_count = sum(1 for segment in segments if _is_numbered_segment(segment))
+    if numbered_count < 2:
+        return False
+
+    numbered_indices = [index for index, segment in enumerate(segments) if _is_numbered_segment(segment)]
+    first_numbered = numbered_indices[0]
+    last_numbered = numbered_indices[-1]
+    for index in range(first_numbered, last_numbered + 1):
+        if not _is_numbered_segment(segments[index]):
+            return False
+
+    div.clear()
+    numbered_batch: list[list] = []
+    changed = False
+
+    def flush_batch() -> None:
+        nonlocal changed
+        if not numbered_batch:
+            return
+        div.append(_make_numbered_list(soup, numbered_batch))
+        numbered_batch.clear()
+        changed = True
+
+    for index, segment in enumerate(segments):
+        if _is_numbered_segment(segment):
+            numbered_batch.append(segment)
+            continue
+        flush_batch()
+        _append_nodes(div, segment)
+        next_segment = segments[index + 1] if index + 1 < len(segments) else None
+        if next_segment and not _is_numbered_segment(next_segment):
+            div.append(soup.new_tag("br"))
+    flush_batch()
+    return changed
+
+
+def _merge_consecutive_numbered_divs(soup: BeautifulSoup, root: Tag) -> bool:
+    changed = False
+    for parent in list(root.find_all(True)):
+        child_tags = [child for child in parent.children if isinstance(child, Tag)]
+        if not child_tags:
+            continue
+        i = 0
+        while i < len(child_tags):
+            child = child_tags[i]
+            if not _div_is_numbered_only(child):
+                i += 1
+                continue
+            group = [child]
+            j = i + 1
+            while j < len(child_tags) and _div_is_numbered_only(child_tags[j]):
+                group.append(child_tags[j])
+                j += 1
+            ol = _make_numbered_list(
+                soup,
+                [_trim_edge_breaks(list(item.contents)) for item in group],
+            )
+            group[0].insert_before(ol)
+            for item in group:
+                item.decompose()
+            changed = True
+            child_tags = [child for child in parent.children if isinstance(child, Tag)]
+            i = child_tags.index(ol) + 1 if ol in child_tags else j
+    return changed
+
+
+def _merge_numbered_lists_across_annotations(soup: BeautifulSoup, root: Tag) -> bool:
+    changed = False
+    for parent in list(root.find_all(True)):
+        child_tags = [child for child in parent.children if isinstance(child, Tag)]
+        if not child_tags:
+            continue
+        i = 0
+        while i < len(child_tags):
+            child = child_tags[i]
+            if child.name != "ol" or NUMBERED_LIST_CLASS not in (child.get("class") or []):
+                i += 1
+                continue
+            group = [child]
+            j = i + 1
+            while j < len(child_tags):
+                nxt = child_tags[j]
+                if _is_annotation_div(nxt):
+                    j += 1
+                    continue
+                if nxt.name == "ol" and NUMBERED_LIST_CLASS in (nxt.get("class") or []):
+                    group.append(nxt)
+                    j += 1
+                    continue
+                if _div_is_numbered_only(nxt):
+                    group.append(nxt)
+                    j += 1
+                    continue
+                break
+            if len(group) < 2:
+                i += 1
+                continue
+            anchor = group[0]
+            merged = soup.new_tag("ol", attrs={"class": NUMBERED_LIST_CLASS})
+            for item in group:
+                if item.name == "ol":
+                    for li in list(item.find_all("li", recursive=False)):
+                        merged.append(li.extract())
+                    continue
+                li = soup.new_tag("li")
+                for node in _trim_edge_breaks(list(item.contents)):
+                    li.append(node)
+                _strip_numbered_prefix(li)
+                merged.append(li)
+            anchor.insert_before(merged)
+            for item in group:
+                item.decompose()
+            changed = True
+            child_tags = [child for child in parent.children if isinstance(child, Tag)]
+            i = child_tags.index(merged) + 1 if merged in child_tags else j
+    return changed
+
+
+def repair_numbered_lists(soup: BeautifulSoup) -> bool:
+    content = soup.select_one(".internal-article-content")
+    if not content:
+        return False
+    changed = False
+    for div in list(content.select(f".{BULLET_DIV_CLASS}")):
+        if _repair_numbered_div(soup, div):
+            changed = True
+    if _merge_consecutive_numbered_divs(soup, content):
+        changed = True
+    if _merge_numbered_lists_across_annotations(soup, content):
+        changed = True
+    return changed
+
+
+def _strip_edge_breaks_from_tag(container: Tag) -> bool:
+    changed = False
+    while container.contents:
+        node = container.contents[-1]
+        if isinstance(node, Tag) and node.name == "br":
+            node.decompose()
+            changed = True
+            continue
+        if isinstance(node, NavigableString) and not str(node).strip():
+            node.extract()
+            changed = True
+            continue
+        break
+    while container.contents:
+        node = container.contents[0]
+        if isinstance(node, Tag) and node.name == "br":
+            node.decompose()
+            changed = True
+            continue
+        if isinstance(node, NavigableString) and not str(node).strip():
+            node.extract()
+            changed = True
+            continue
+        break
+    return changed
+
+
+def _collapse_consecutive_breaks(container: Tag) -> bool:
+    changed = False
+    previous_was_break = False
+    for node in list(container.contents):
+        if isinstance(node, Tag) and node.name == "br":
+            if previous_was_break:
+                node.decompose()
+                changed = True
+                continue
+            previous_was_break = True
+            continue
+        if isinstance(node, NavigableString) and not str(node).strip():
+            continue
+        previous_was_break = False
+    return changed
+
+
+def _is_empty_text_container(el: Tag) -> bool:
+    if el.get_text(strip=True):
+        return False
+    return not el.find(["img", "a", "table", "ul", "ol", "iframe", "svg", "video", "audio"])
+
+
+def remove_paragraph_spacer_breaks(soup: BeautifulSoup) -> bool:
+    content = soup.select_one(".internal-article-content")
+    if not content:
+        return False
+    changed = False
+    for el in list(content.select(f".{BULLET_DIV_CLASS}, p, .internal-article-intro")):
+        if _collapse_consecutive_breaks(el):
+            changed = True
+        if _strip_edge_breaks_from_tag(el):
+            changed = True
+        if _is_empty_text_container(el):
+            el.decompose()
+            changed = True
+    return changed
+
+
+def remove_empty_mantine_1fv3ct(soup: BeautifulSoup) -> bool:
+    content = soup.select_one(".internal-article-content")
+    if not content:
+        return False
+    changed = False
+    for el in list(content.select(".mantine-1fv3ct")):
+        if _is_empty_text_container(el):
+            el.decompose()
+            changed = True
+    return changed
+
+
+def collapse_article_whitespace(soup: BeautifulSoup) -> bool:
+    content = soup.select_one(".internal-article-content")
+    if not content:
+        return False
+    changed = False
+    for node in content.find_all(string=True):
+        if not isinstance(node, NavigableString):
+            continue
+        parent = node.parent
+        if parent and parent.name in ("script", "style"):
+            continue
+        original = str(node)
+        if not original:
+            continue
+        normalized = INTERNAL_WS_RE.sub(" ", original)
+        if not normalized.strip():
+            if original:
+                node.replace_with("")
+                changed = True
+            continue
+        if normalized != original:
+            node.replace_with(normalized)
+            changed = True
+    return changed
+
+
+def _trim_leading_text(container: Tag) -> bool:
+    changed = False
+    for node in container.descendants:
+        if not isinstance(node, NavigableString):
+            continue
+        text = str(node)
+        if not text.strip():
+            if text:
+                node.replace_with("")
+                changed = True
+            continue
+        trimmed = LEADING_WS_RE.sub("", text)
+        if trimmed != text:
+            node.replace_with(trimmed)
+            changed = True
+        return changed
+    return changed
+
+
+def trim_leading_paragraph_whitespace(soup: BeautifulSoup) -> bool:
+    content = soup.select_one(".internal-article-content")
+    if not content:
+        return False
+    changed = False
+    for el in content.select(f".{BULLET_DIV_CLASS}, p, .internal-article-intro"):
+        if _trim_leading_text(el):
+            changed = True
+    return changed
+
+
+def _continuation_starts_lowercase(text: str) -> bool:
+    stripped = text.lstrip()
+    if not stripped:
+        return False
+    return stripped[0].islower() or stripped[0] in "іїє"
+
+
+def _li_bold_lead_tag(li: Tag) -> Tag | None:
+    for node in li.children:
+        if isinstance(node, NavigableString) and not str(node).strip():
+            continue
+        if isinstance(node, Tag) and node.name in ("b", "strong") and node.get_text(strip=True):
+            return node
+        return None
+    return None
+
+
+def _li_continuation_text(li: Tag, bold: Tag) -> str:
+    parts: list[str] = []
+    after_bold = False
+    for node in li.children:
+        if node is bold:
+            after_bold = True
+            continue
+        if not after_bold:
+            continue
+        if isinstance(node, NavigableString):
+            parts.append(str(node))
+        else:
+            parts.append(node.get_text())
+    return "".join(parts)
+
+
+def _split_bold_lead_from_single_item_list(soup: BeautifulSoup, ul: Tag, li: Tag) -> bool:
+    classes = ul.get("class") or []
+    if ARTICLE_LIST_CLASS not in classes:
+        return False
+    if len(ul.find_all("li", recursive=False)) != 1:
+        return False
+    bold = _li_bold_lead_tag(li)
+    if not bold:
+        return False
+    bold_text = bold.get_text(strip=True)
+    if len(bold_text) < 15:
+        return False
+    continuation_text = _li_continuation_text(li, bold)
+    if not _continuation_starts_lowercase(continuation_text):
+        return False
+
+    continuation_nodes: list = []
+    after_bold = False
+    for node in list(li.children):
+        if node is bold:
+            after_bold = True
+            continue
+        if after_bold:
+            continuation_nodes.append(node.extract())
+
+    div = soup.new_tag("div", attrs={"class": ["mantine-Text-root", BULLET_DIV_CLASS]})
+    div.append(bold.extract())
+    ul.insert_before(div)
+
+    li.clear()
+    for node in continuation_nodes:
+        li.append(node)
+    if li.contents and isinstance(li.contents[0], NavigableString):
+        first = str(li.contents[0])
+        stripped = first.lstrip()
+        if stripped != first:
+            li.contents[0].replace_with(stripped)
+    return True
+
+
+def _strip_leading_breaks_from_li(li: Tag) -> bool:
+    changed = False
+    while li.contents:
+        node = li.contents[0]
+        if isinstance(node, NavigableString) and not str(node).strip():
+            node.extract()
+            changed = True
+            continue
+        if isinstance(node, Tag) and node.name == "br":
+            node.decompose()
+            changed = True
+            continue
+        if isinstance(node, Tag) and node.name in ("b", "strong") and not node.get_text(strip=True):
+            node.decompose()
+            changed = True
+            continue
+        break
+    return changed
+
+
+def _strip_trailing_breaks_from_li(li: Tag) -> bool:
+    changed = False
+    while li.contents:
+        node = li.contents[-1]
+        if isinstance(node, NavigableString) and not str(node).strip():
+            node.extract()
+            changed = True
+            continue
+        if isinstance(node, Tag) and node.name == "br":
+            node.decompose()
+            changed = True
+            continue
+        break
+    return changed
+
+
+def _merge_div_trailing_list_with_sibling_ul(root: Tag) -> bool:
+    changed = False
+    for parent in list(root.find_all(True)):
+        child_tags = [child for child in parent.children if isinstance(child, Tag)]
+        i = 0
+        while i < len(child_tags) - 1:
+            current = child_tags[i]
+            nxt = child_tags[i + 1]
+            classes = current.get("class") or []
+            if BULLET_DIV_CLASS not in classes:
+                i += 1
+                continue
+            if nxt.name != "ul" or ARTICLE_LIST_CLASS not in (nxt.get("class") or []):
+                i += 1
+                continue
+            trailing = _direct_edge_list(current, "last")
+            if not trailing:
+                i += 1
+                continue
+            for li in list(nxt.find_all("li", recursive=False)):
+                trailing.append(li.extract())
+            nxt.decompose()
+            changed = True
+            child_tags = [child for child in parent.children if isinstance(child, Tag)]
+    return changed
+
+
+def _merge_adjacent_sibling_uls(root: Tag) -> bool:
+    changed = False
+    for parent in list(root.find_all(True)):
+        child_tags = [child for child in parent.children if isinstance(child, Tag)]
+        i = 0
+        while i < len(child_tags) - 1:
+            current = child_tags[i]
+            nxt = child_tags[i + 1]
+            if current.name != "ul" or nxt.name != "ul":
+                i += 1
+                continue
+            if ARTICLE_LIST_CLASS not in (current.get("class") or []):
+                i += 1
+                continue
+            if ARTICLE_LIST_CLASS not in (nxt.get("class") or []):
+                i += 1
+                continue
+            for li in list(nxt.find_all("li", recursive=False)):
+                current.append(li.extract())
+            nxt.decompose()
+            changed = True
+            child_tags = [child for child in parent.children if isinstance(child, Tag)]
+    return changed
+
+
+def _repair_all_list_items(content: Tag) -> bool:
+    changed = False
+    for li in list(content.find_all("li")):
+        if _strip_leading_breaks_from_li(li):
+            changed = True
+        if _strip_trailing_breaks_from_li(li):
+            changed = True
+        if _collapse_consecutive_breaks(li):
+            changed = True
+        if _is_empty_text_container(li):
+            li.decompose()
+            changed = True
+    return changed
+
+
+def repair_split_list_leads(soup: BeautifulSoup) -> bool:
+    content = soup.select_one(".internal-article-content")
+    if not content:
+        return False
+    changed = False
+    for ul in list(content.select(f"ul.{ARTICLE_LIST_CLASS}")):
+        lis = ul.find_all("li", recursive=False)
+        if len(lis) != 1:
+            continue
+        if _split_bold_lead_from_single_item_list(soup, ul, lis[0]):
+            changed = True
+    if _repair_all_list_items(content):
+        changed = True
+    return changed
+
+
+def repair_dash_bullet_lists(soup: BeautifulSoup) -> bool:
+    content = soup.select_one(".internal-article-content")
+    if not content:
+        return False
+    changed = False
+    if _merge_consecutive_lone_li_bullet_divs(soup, content):
+        changed = True
+    for div in list(content.select(f".{BULLET_DIV_CLASS}")):
+        if _repair_bullet_div(soup, div):
+            changed = True
+    if _merge_consecutive_bullet_divs(soup, content):
+        changed = True
+    if _merge_adjacent_div_bullet_lists(content):
+        changed = True
+    if _merge_div_trailing_list_with_sibling_ul(content):
+        changed = True
+    if _merge_adjacent_sibling_uls(content):
+        changed = True
+    if _convert_singleton_bullet_divs(soup, content):
+        changed = True
+    if _merge_bullet_lists_across_annotations(soup, content):
+        changed = True
+    if _merge_consecutive_bullet_paragraphs(soup, content):
+        changed = True
+    if _convert_singleton_bullet_paragraphs(soup, content):
+        changed = True
+    if _dedupe_bullet_list_intro_paragraph(content):
+        changed = True
+    if trim_leading_paragraph_whitespace(soup):
+        changed = True
+    if remove_paragraph_spacer_breaks(soup):
+        changed = True
+    if remove_empty_mantine_1fv3ct(soup):
+        changed = True
+    if repair_numbered_lists(soup):
+        changed = True
+    if repair_split_list_leads(soup):
+        changed = True
+    if collapse_article_whitespace(soup):
+        changed = True
+    return changed
+
+
+def hide_stage_interlinks(soup: BeautifulSoup) -> None:
+    for wrap in soup.select(".css-1sz33jp"):
+        for el in wrap.select(":scope > .css-1tq4v0d, :scope > .mantine-Carousel-root, :scope > [class*='mantine-Carousel-root']"):
+            el.decompose()
+    for link in soup.select("a.css-lnlfjp, a.css-1wi3il6"):
+        row = link.find_parent(class_=lambda c: c and ("mantine-Carousel-root" in c or "css-1tq4v0d" in c))
+        if row:
+            row.decompose()
+    for el in soup.select(".css-1iehrax, .mantine-73o8aw.css-1iehrax"):
+        el.decompose()
+
+
+def remove_duplicate_toc_sections(content_host: Tag) -> bool:
+    if not content_host.select_one(".internal-article-toc"):
+        return False
+
+    removed = False
+    for child in list(content_host.children):
+        if not isinstance(child, Tag):
+            continue
+        if child.name != "section":
+            continue
+        classes = child.get("class") or []
+        if not {"css-1napgkq", "css-1m99gl8", "css-t97qev"} & set(classes):
+            continue
+        if child.select_one(".css-2y3zsr, .css-1sz33jp"):
+            child.decompose()
+            removed = True
+    return removed
+
+
+def _about_section_block(
+    soup: BeautifulSoup,
+    section_id: str,
+    heading: Tag,
+    content_nodes: list[Tag],
+) -> Tag:
+    """Wrap a section title and body in a white card (about page)."""
+    block = soup.new_tag("div", attrs={"class": "mantine-wnhdd8", "id": section_id})
+    card = soup.new_tag("div", attrs={"class": "css-sdnfq3 mantine-1hdrj7p"})
+    _ensure_section_h2(heading)
+    card.append(heading.extract())
+    for node in content_nodes:
+        card.append(node.extract())
+    section_h2 = card.find("h2")
+    if section_h2:
+        demote_about_card_subheadings(card, section_h2)
+    block.append(card)
+    return block
+
+
+def _about_faq_item_block(soup: BeautifulSoup, item: Tag) -> Tag | None:
+    section_id = item.get("id") or ""
+    if not section_id:
+        return None
+
+    heading = item.select_one(
+        ".mantine-Accordion-label h2, .mantine-Accordion-label h4, "
+        ".mantine-Accordion-label .mantine-Title-root"
+    )
+    panel = item.select_one(".mantine-Accordion-panel")
+    if not heading or not panel:
+        return None
+
+    content_host = panel.select_one(".mantine-Accordion-content") or panel
+    inner = content_host.select_one(".mantine-1fr50if") or content_host
+    content_nodes = [child for child in list(inner.children) if isinstance(child, Tag)]
+    if not content_nodes:
+        content_nodes = [inner]
+
+    h2 = soup.new_tag("h2")
+    h2["class"] = heading.get("class") or []
+    for cls in ("css-su8tkm", "mantine-1p58xby", SECTION_H2_CLASS):
+        if cls not in h2["class"]:
+            h2["class"].append(cls)
+    h2.string = heading.get_text(strip=True)
+    return _about_section_block(soup, section_id, h2, content_nodes)
+
+
+def repair_about_faq_order(sections_wrap: Tag) -> bool:
+    """Place the FAQ group header before its items and restore question order."""
+    group_header = sections_wrap.select_one(":scope > .mantine-vgkn1f")
+    if not group_header:
+        return False
+
+    faq_blocks: list[Tag] = []
+    partners_block: Tag | None = None
+    abbrev_block: Tag | None = None
+    for child in sections_wrap.children:
+        if not isinstance(child, Tag):
+            continue
+        if child is group_header:
+            continue
+        classes = child.get("class") or []
+        if "mantine-wnhdd8" not in classes:
+            continue
+        section_id = child.get("id") or ""
+        if section_id == "Скорочення_та_абревіатури":
+            abbrev_block = child
+        elif section_id == "Наші_партнери":
+            partners_block = child
+        else:
+            faq_blocks.append(child)
+
+    if not faq_blocks:
+        return False
+
+    first_id = faq_blocks[0].get("id") or ""
+    if first_id.startswith("Чи_надаєте"):
+        ordered = faq_blocks
+    elif first_id.startswith("Якщо"):
+        ordered = list(reversed(faq_blocks))
+    else:
+        ordered = faq_blocks
+
+    children = [c for c in sections_wrap.children if isinstance(c, Tag)]
+    try:
+        header_idx = children.index(group_header)
+        first_faq_idx = children.index(ordered[0])
+    except ValueError:
+        header_idx = -1
+        first_faq_idx = -1
+    if header_idx >= 0 and first_faq_idx == header_idx + 1:
+        current_ids = [c.get("id") for c in children[first_faq_idx : first_faq_idx + len(ordered)]]
+        if current_ids == [block.get("id") for block in ordered]:
+            return False
+
+    for block in faq_blocks:
+        block.extract()
+    group_header.extract()
+
+    anchor = abbrev_block
+    if not isinstance(anchor, Tag):
+        anchor = partners_block.find_previous_sibling(lambda tag: isinstance(tag, Tag)) if partners_block else None
+    if not isinstance(anchor, Tag):
+        return False
+
+    for block in [group_header, *ordered]:
+        anchor.insert_after(block)
+        anchor = block
+    return True
+
+
+def restructure_about_sections(main_col: Tag, soup: BeautifulSoup) -> bool:
+    """Convert about-page sections to css-sdnfq3 cards so gray breaks appear before subheadings."""
+    changed = False
+    sections_wrap = main_col.select_one(".mantine-1jhay8j")
+    if not sections_wrap:
+        sections_wrap = soup.new_tag("div", attrs={"class": "mantine-1jhay8j"})
+        moved = False
+        for child in list(main_col.children):
+            if not isinstance(child, Tag):
+                continue
+            classes = set(child.get("class") or [])
+            if child.name == "section" or classes & {"css-1sctyhq"}:
+                if not moved:
+                    child.insert_before(sections_wrap)
+                    moved = True
+                sections_wrap.append(child.extract())
+        if not moved:
+            sections_wrap.decompose()
+            return False
+        changed = True
+
+    for section in list(sections_wrap.find_all("section", recursive=False)):
+        section_id = section.get("id") or ""
+
+        if section_id:
+            card = section.select_one(".css-1suv430, .mantine-1hdrj7p")
+            heading = section.select_one("h2, h3")
+            body = section.select_one(".css-1uu9wx8, .mantine-1fr50if")
+            if card and heading and body and heading.parent is card:
+                h2 = soup.new_tag("h2")
+                h2["class"] = heading.get("class") or []
+                if "css-o8yj4d" not in h2["class"]:
+                    h2["class"].append("css-o8yj4d")
+                if "mantine-1p58xby" not in h2["class"]:
+                    h2["class"].append("mantine-1p58xby")
+                h2.string = heading.get_text(strip=True)
+                block = _about_section_block(soup, section_id, h2, [body])
+                section.replace_with(block)
+                changed = True
+            continue
+
+        faq_items = section.select(".css-g0tr8[id], .mantine-1ng34cm[id]")
+        if faq_items:
+            group_header = section.select_one(".mantine-vgkn1f")
+            new_blocks: list[Tag] = []
+            if group_header:
+                new_blocks.append(group_header.extract())
+            for item in faq_items:
+                block = _about_faq_item_block(soup, item)
+                if block:
+                    new_blocks.append(block)
+                    item.decompose()
+            if new_blocks:
+                anchor = section.find_previous_sibling(
+                    lambda tag: isinstance(tag, Tag)
+                )
+                if not isinstance(anchor, Tag):
+                    anchor = section
+                    for block in reversed(new_blocks):
+                        section.insert_before(block)
+                else:
+                    for block in new_blocks:
+                        anchor.insert_after(block)
+                        anchor = block
+                section.decompose()
+                changed = True
+            continue
+
+        partners_heading = section.select_one("h2[id], h3[id]")
+        if partners_heading and section.select(".css-1s0m78j, .mantine-1hdrj7p"):
+            section_id = partners_heading.get("id") or "partners"
+            h2 = soup.new_tag("h2")
+            h2["class"] = partners_heading.get("class") or []
+            if "css-o8yj4d" not in h2["class"]:
+                h2["class"].append("css-o8yj4d")
+            if "mantine-1p58xby" not in h2["class"]:
+                h2["class"].append("mantine-1p58xby")
+            h2.string = partners_heading.get_text(strip=True)
+            content_nodes = [
+                child
+                for child in section.children
+                if isinstance(child, Tag) and child is not partners_heading
+            ]
+            block = _about_section_block(soup, section_id, h2, content_nodes)
+            section.replace_with(block)
+            changed = True
+
+    if sections_wrap and repair_about_faq_order(sections_wrap):
+        changed = True
+
+    return changed
+
+
+def remove_stage_step_badges(content_host: Tag) -> bool:
+    """Remove numbered step circles (1, 2, 3…) before stage headings on documents page."""
+    removed = False
+    for header in content_host.select(".mantine-j9g3bi"):
+        for child in list(header.children):
+            if not isinstance(child, Tag) or child.name == "style":
+                continue
+            classes = set(child.get("class") or [])
+            if classes & {"css-13t4hvv", "mantine-11q5icf"}:
+                child.decompose()
+                removed = True
+                break
+    return removed
+
+
+def remove_orphan_toc_columns(content_host: Tag) -> bool:
+    removed = False
+    for child in list(content_host.children):
+        if not isinstance(child, Tag) or child.name == "style":
+            continue
+        classes = set(child.get("class") or [])
+        if "internal-main-header" in classes:
+            continue
+        if "internal-article-layout" in classes or child.select_one(".internal-article-layout"):
+            continue
+        if classes & {"css-12mrpgq", "css-gfn0ts", "css-2y3zsr"}:
+            child.decompose()
+            removed = True
+    return removed
+
+
+def repair_shell_layout(shell: Tag) -> bool:
+    content_host = shell.select_one(".internal-main")
+    if not content_host:
+        return False
+
+    orphaned = None
+    for child in shell.children:
+        if isinstance(child, Tag) and "internal-article-layout" in (child.get("class") or []):
+            orphaned = child
+            break
+
+    if not orphaned or orphaned in content_host.descendants:
+        return False
+
+    for sec in list(content_host.select("section")):
+        if len(sec.get_text(" ", strip=True)) < 20 and not sec.select(".css-7nll2u"):
+            sec.decompose()
+
+    header = content_host.select_one(".internal-main-header")
+    if header:
+        header.insert_after(orphaned.extract())
+    else:
+        content_host.append(orphaned.extract())
+    return True
+
+
+def _doc_root(node: Tag) -> Tag:
+    root = node
+    while root.parent is not None:
+        root = root.parent
+    return root
+
+
+def unwrap_baked_layout(main: Tag, standalone: bool) -> None:
+    shell = main.select_one(".internal-page-shell")
+    if shell:
+        if standalone and "internal-page-shell--standalone" in (shell.get("class") or []):
+            content_host = shell.select_one(".internal-main")
+            if content_host:
+                header = content_host.select_one(".internal-main-header")
+                if header:
+                    header.decompose()
+                section = _doc_root(main).new_tag("section", attrs={"class": "css-t97qev"})
+                for child in list(content_host.children):
+                    if isinstance(child, Tag):
+                        section.append(child.extract())
+                shell.replace_with(section)
+            else:
+                shell.decompose()
+            return
+
+        repair_shell_layout(shell)
+        content_host = shell.select_one(".internal-main")
+        if content_host:
+            header = content_host.select_one(".internal-main-header")
+            if header:
+                header.decompose()
+            for child in list(content_host.children):
+                if isinstance(child, Tag):
+                    main.append(child.extract())
+        shell.decompose()
+        return
+
+    for row in main.select(".internal-breadcrumbs-row--standalone"):
+        row.decompose()
+
+    layout = main.select_one(".internal-article-layout")
+    if not layout:
+        return
+
+    white = layout.select_one(".internal-article-content")
+    if not white:
+        toc_wrap = layout.select_one(".internal-article-toc")
+        if toc_wrap:
+            for child in list(toc_wrap.children):
+                if isinstance(child, Tag):
+                    layout.insert_before(child.extract())
+            toc_wrap.decompose()
+        layout["class"] = [c for c in (layout.get("class") or []) if c != "internal-article-layout"]
+        return
+
+    main_col = white.select_one(".css-7nll2u")
+    if main_col:
+        section = layout.find_parent("section")
+        body_row = section.select_one(".css-2y3zsr, .css-k1l4fw") if section else None
+        if body_row and main_col not in body_row.descendants:
+            body_row.clear()
+            body_row.append(main_col.extract())
+    layout.decompose()
+
+
+def restructure_article(
+    soup: BeautifulSoup,
+    content_host: Tag,
+    page_title_text: str,
+    breadcrumb_trail: list[dict] | None,
+    standalone: bool,
+) -> list[tuple[str, str]]:
+    body_row = content_host.select_one(".css-2y3zsr, .css-k1l4fw")
+    if not body_row:
+        return []
+
+    main_col = body_row.select_one(".css-7nll2u")
+    toc_col = body_row.select_one(":scope > .css-gfn0ts, :scope > .css-12mrpgq")
+    if not main_col:
+        return []
+
+    toc_items: list[tuple[str, str]] = []
+
+    if "css-k1l4fw" in (body_row.get("class") or []):
+        classes = list(dict.fromkeys([*(body_row.get("class") or []), "internal-article-layout"]))
+        body_row["class"] = classes
+
+        white_panel = body_row.select_one(".internal-article-content")
+        if not white_panel:
+            white_panel = soup.new_tag("div", attrs={"class": "internal-article-content"})
+            main_col.replace_with(white_panel)
+            white_panel.append(main_col)
+
+        remove_duplicate_title(main_col, page_title_text)
+
+        toc_wrap = body_row.select_one(".internal-article-toc")
+        if not toc_wrap:
+            toc_wrap = soup.new_tag("div", attrs={"class": "internal-article-toc"})
+            if toc_col:
+                toc_col.replace_with(toc_wrap)
+                toc_wrap.append(toc_col)
+            else:
+                body_row.append(toc_wrap)
+        elif toc_col and toc_col not in toc_wrap.descendants:
+            toc_wrap.append(toc_col)
+        if not toc_col:
+            ensure_generated_toc(toc_wrap, main_col)
+        flatten_article_accordions(content_host)
+        mark_intro_text(main_col)
+        toc_items = fix_toc_wrap(toc_wrap) or toc_nav_items(collect_toc_entries(main_col))
+        return toc_items
+
+    layout_row = content_host.select_one(".internal-article-layout")
+    if not layout_row:
+        layout_row = soup.new_tag("div", attrs={"class": "internal-article-layout"})
+        header_wrap = content_host.select_one(".internal-main-header")
+        if header_wrap:
+            header_wrap.insert_after(layout_row)
+        else:
+            content_host.append(layout_row)
+
+    white_panel = layout_row.select_one(".internal-article-content")
+    if not white_panel:
+        white_panel = soup.new_tag("div", attrs={"class": "internal-article-content"})
+        layout_row.append(white_panel)
+
+    toc_wrap = layout_row.select_one(".internal-article-toc")
+    if not toc_wrap:
+        toc_wrap = soup.new_tag("div", attrs={"class": "internal-article-toc"})
+        layout_row.append(toc_wrap)
+
+    remove_duplicate_title(main_col, page_title_text)
+
+    if main_col not in white_panel.descendants:
+        white_panel.append(main_col.extract())
+
+    if toc_col and toc_col not in toc_wrap.descendants:
+        toc_wrap.append(toc_col.extract())
+    else:
+        ensure_generated_toc(toc_wrap, main_col)
+
+    flatten_article_accordions(content_host)
+    mark_intro_text(main_col)
+    toc_items = fix_toc_wrap(toc_wrap) or toc_nav_items(collect_toc_entries(main_col))
+    return toc_items
+
+
+def set_html_ready(soup: BeautifulSoup) -> None:
+    html = soup.find("html")
+    if not html:
+        return
+    classes = [c for c in (html.get("class") or []) if c not in ("internal-layout-pending",)]
+    if "internal-layout-active" not in classes:
+        classes.append("internal-layout-active")
+    if "internal-layout-ready" not in classes:
+        classes.append("internal-layout-ready")
+    html["class"] = classes
+
+
+def is_layout_already_baked(soup: BeautifulSoup, main: Tag, path: str, standalone: bool) -> bool:
+    baked = main.get("data-internal-layout-baked")
+    if normalize_path(baked or "") != normalize_path(path):
+        return False
+    if standalone:
+        return bool(
+            soup.select_one("h1.internal-page-title")
+            and soup.select_one(".internal-main-header")
+            and soup.select_one(".internal-article-layout")
+            and soup.select_one(".internal-article-content")
+        )
+    shell = soup.select_one(".internal-page-shell")
+    if not shell or not soup.select_one(".internal-main"):
+        return False
+    for child in shell.children:
+        if isinstance(child, Tag) and "internal-article-layout" in (child.get("class") or []):
+            return False
+    return True
+
+
+def bake_page(html_path: Path, tree: dict, force: bool = False) -> bool:
+    path = path_from_file(html_path)
+    if path == "/":
+        return False
+
+    soup = BeautifulSoup(html_path.read_text(encoding="utf-8"), "html.parser")
+    main = soup.select_one("main.css-yp9swi") or soup.select_one("main")
+    if not main:
+        return False
+
+    standalone = path in STANDALONE_PAGES
+    category = None if standalone else find_category(tree, path)
+    if not category and not standalone:
+        return False
+
+    if not force and is_layout_already_baked(soup, main, path, standalone):
+        content_host = soup.select_one(".internal-main")
+        if content_host:
+            main_col = content_host.select_one(
+                ".internal-article-content .css-7nll2u, .css-7nll2u"
+            )
+            toc_wrap = content_host.select_one(".internal-article-toc")
+            if main_col and toc_wrap:
+                ensure_generated_toc(toc_wrap, main_col)
+                fix_toc_wrap(toc_wrap)
+            if main_col:
+                mark_intro_text(main_col)
+            sync_baked_mobile_toc(content_host)
+        if path == "/privacy-policy/":
+            upsert_privacy_page_title(soup)
+            if content_host:
+                finalize_privacy_layout(content_host, soup)
+        apply_heading_normalization(soup)
+        normalize_document_download_blocks(soup)
+        repair_dash_bullet_lists(soup)
+        set_html_ready(soup)
+        html_path.write_text(
+            linkify_email_addresses(normalize_typographic_quotes(str(soup))),
+            encoding="utf-8",
+        )
+        return True
+
+    unwrap_baked_layout(main, standalone)
+    hide_stage_interlinks(soup)
+    data = load_next_data(soup)
+    title = standalone_page_title(main, soup, data) if standalone else page_title(soup, data)
+    if path == "/privacy-policy/":
+        title = privacy_page_title(main)
+
+    if standalone:
+        section = (
+            main.select_one("section.css-1napgkq")
+            or main.select_one("section.css-1m99gl8")
+            or main.select_one("section.css-t97qev")
+            or main.select_one("section")
+        )
+
+        shell = main.select_one(".internal-page-shell")
+        if not shell:
+            shell = soup.new_tag(
+                "div",
+                attrs={"class": "internal-page-shell internal-page-shell--standalone"},
+            )
+            if section and section.parent is main:
+                for child in list(section.children):
+                    if isinstance(child, Tag):
+                        shell.append(child.extract())
+                section.decompose()
+            else:
+                for child in list(main.children):
+                    if isinstance(child, Tag):
+                        shell.append(child.extract())
+            main.append(shell)
+
+        if path == "/download/":
+            shell_classes = list(shell.get("class") or [])
+            if "internal-page-shell--download" not in shell_classes:
+                shell_classes.append("internal-page-shell--download")
+                shell["class"] = shell_classes
+
+        if path == "/privacy-policy/":
+            shell_classes = list(shell.get("class") or [])
+            if "internal-page-shell--privacy" not in shell_classes:
+                shell_classes.append("internal-page-shell--privacy")
+                shell["class"] = shell_classes
+
+        content_host = shell.select_one(".internal-main")
+        if not content_host:
+            content_host = soup.new_tag("div", attrs={"class": "internal-main"})
+            for child in list(shell.children):
+                if isinstance(child, Tag):
+                    content_host.append(child.extract())
+            shell.append(content_host)
+
+        if path == "/privacy-policy/":
+            prepare_privacy_standalone_layout(content_host, soup)
+
+        toc_items = restructure_article(soup, content_host, title, None, True)
+        remove_stage_step_badges(content_host)
+        main_col = content_host.select_one(".css-7nll2u")
+        if main_col and path in ABOUT_STYLE_PAGES:
+            if restructure_about_sections(main_col, soup):
+                toc_wrap = content_host.select_one(".internal-article-toc")
+                if toc_wrap:
+                    ensure_generated_toc(toc_wrap, main_col)
+                    toc_items = toc_nav_items(collect_toc_entries(main_col))
+            else:
+                sections_wrap = main_col.select_one(".mantine-1jhay8j")
+                if sections_wrap and repair_about_faq_order(sections_wrap):
+                    toc_wrap = content_host.select_one(".internal-article-toc")
+                    if toc_wrap:
+                        ensure_generated_toc(toc_wrap, main_col)
+                        toc_items = toc_nav_items(collect_toc_entries(main_col))
+        if main_col:
+            remove_duplicate_title(main_col, title)
+
+        header_html = (
+            f'<div class="internal-breadcrumbs-row internal-breadcrumbs-row--standalone">'
+            f"{mobile_toc_toggle_markup(toc_items)}</div>"
+            f'<h1 class="internal-page-title">{escape(title)}</h1>'
+        )
+        header_wrap = content_host.select_one(".internal-main-header")
+        if not header_wrap:
+            header_wrap = soup.new_tag("div", attrs={"class": "internal-main-header"})
+            content_host.insert(0, header_wrap)
+        header_wrap.clear()
+        header_wrap.append(BeautifulSoup(header_html, "html.parser"))
+        remove_orphan_toc_columns(content_host)
+        sync_baked_mobile_toc(content_host)
+        main["data-internal-layout-baked"] = path
+        main["data-internal-layout"] = path
+        if path == "/privacy-policy/" and soup.title:
+            soup.title.string = title
+        apply_heading_normalization(soup)
+        if path == "/privacy-policy/":
+            finalize_privacy_layout(content_host, soup, title)
+        normalize_document_download_blocks(soup)
+        repair_dash_bullet_lists(soup)
+        set_html_ready(soup)
+        html_path.write_text(
+            linkify_email_addresses(normalize_typographic_quotes(str(soup))),
+            encoding="utf-8",
+        )
+        return True
+
+    trail_nodes = find_trail(category.get("children") or [], path) or []
+    breadcrumb_trail = build_breadcrumb_trail(category, path)
+    cards = resolve_cards(category, path, trail_nodes, soup)
+    hub_page = bool(cards)
+
+    shell = main.select_one(".internal-page-shell")
+    if not shell:
+        shell = soup.new_tag("div", attrs={"class": "internal-page-shell"})
+        for child in list(main.children):
+            if isinstance(child, Tag):
+                shell.append(child.extract())
+        main.append(shell)
+
+    content_host = shell.select_one(".internal-main")
+    if not content_host:
+        content_host = soup.new_tag("div", attrs={"class": "internal-main"})
+        shell.append(content_host)
+
+    repair_shell_layout(shell)
+
+    sidebar = shell.select_one(".internal-sidebar")
+    sidebar_markup = BeautifulSoup(sidebar_html(category, path), "html.parser")
+    if sidebar:
+        sidebar.replace_with(sidebar_markup)
+    else:
+        shell.insert(0, sidebar_markup)
+
+    if hub_page:
+        for child in list(shell.children):
+            if isinstance(child, Tag) and "internal-sidebar" not in (child.get("class") or []):
+                if child is not content_host:
+                    child.decompose()
+        for extra in shell.select("section"):
+            extra.decompose()
+        header_html = (
+            breadcrumbs_row_html(breadcrumb_trail, [])
+            + f'<h1 class="internal-page-title">{escape(title)}</h1>'
+            + strip_html_cards(cards)
+        )
+        content_host.clear()
+        content_host.append(BeautifulSoup(header_html, "html.parser"))
+    else:
+        section = (
+            shell.select_one("section.css-1napgkq")
+            or shell.select_one("section.css-1m99gl8")
+            or shell.select_one("section.css-t97qev")
+            or shell.select_one("section")
+        )
+        if section and section not in content_host.descendants:
+            content_host.append(section.extract())
+
+        toc_items: list[tuple[str, str]] = []
+        restructure_article(soup, content_host, title, breadcrumb_trail, False)
+        toc_wrap = content_host.select_one(".internal-article-toc")
+        if toc_wrap:
+            toc_items = fix_toc_wrap(toc_wrap)
+        if not toc_items:
+            main_col = content_host.select_one(".css-7nll2u")
+            if main_col:
+                toc_items = toc_nav_items(collect_toc_entries(main_col))
+
+        header_html = (
+            breadcrumbs_row_html(breadcrumb_trail, toc_items)
+            + f'<h1 class="internal-page-title">{escape(title)}</h1>'
+        )
+        header_wrap = content_host.select_one(".internal-main-header")
+        if not header_wrap:
+            header_wrap = soup.new_tag("div", attrs={"class": "internal-main-header"})
+            content_host.insert(0, header_wrap)
+        header_wrap.clear()
+        header_wrap.append(BeautifulSoup(header_html, "html.parser"))
+        remove_duplicate_toc_sections(content_host)
+        remove_orphan_toc_columns(content_host)
+        sync_baked_mobile_toc(content_host)
+
+    main["data-internal-layout-baked"] = path
+    main["data-internal-layout"] = path
+    apply_heading_normalization(soup)
+    normalize_document_download_blocks(soup)
+    repair_dash_bullet_lists(soup)
+    set_html_ready(soup)
+    html_path.write_text(
+        linkify_email_addresses(normalize_typographic_quotes(str(soup))),
+        encoding="utf-8",
+    )
+    return True
+
+
+def main() -> None:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Bake internal page layout into HTML.")
+    parser.add_argument("--path", default="", help="Bake one page or directory only")
+    parser.add_argument("--force", action="store_true", help="Re-bake even if already baked")
+    args = parser.parse_args()
+
+    tree = load_tree()
+    if args.path:
+        candidate = ROOT / args.path.strip("/")
+        if candidate.is_dir():
+            files = [candidate / "index.html"]
+        elif candidate.suffix == ".html":
+            files = [candidate]
+        else:
+            files = [Path(str(candidate) + "/index.html"), candidate]
+        files = [p.resolve() for p in files if p.exists()]
+    else:
+        files = sorted(p for p in ROOT.rglob("*.html") if p.resolve() != (ROOT / "index.html").resolve())
+
+    baked = skipped = 0
+    for html_path in files:
+        if bake_page(html_path, tree, force=args.force):
+            baked += 1
+        else:
+            skipped += 1
+    print(f"Baked layout: {baked}, skipped: {skipped}")
+
+
+if __name__ == "__main__":
+    main()

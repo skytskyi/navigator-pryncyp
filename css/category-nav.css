@@ -1,0 +1,123 @@
+@media (min-width: 1280px) {
+  .mantine-gemcqc:has(> .category-nav-chrome),
+  .mantine-gemcqc:has(> .category-nav) {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    width: 100%;
+  }
+
+  .mantine-gemcqc:has(> .category-nav-chrome) > header.css-9r8uj3,
+  .mantine-gemcqc:has(> .category-nav) > header.css-9r8uj3 {
+    position: relative;
+    top: auto;
+    z-index: auto;
+  }
+}
+
+.category-nav-chrome {
+  width: 100%;
+  margin-bottom: 40px;
+}
+
+.category-nav {
+  position: relative;
+  z-index: 999;
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  height: 48px;
+  background: #e2e2e2;
+  border-bottom: 2px solid #cbcbcb;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1279px) {
+  .category-nav-chrome {
+    display: none !important;
+  }
+
+  .category-nav {
+    display: none !important;
+  }
+}
+
+.category-nav__label {
+  position: absolute;
+  left: var(--site-gutter, 40px);
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.2;
+  font-weight: 300;
+  color: #444444;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.category-nav__inner {
+  display: flex;
+  align-items: stretch;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  box-sizing: border-box;
+  padding-right: var(--site-gutter, 40px);
+  padding-left: calc(var(--site-gutter, 40px) + 275px + 40px);
+}
+
+.category-nav__links {
+  display: flex;
+  align-items: stretch;
+  gap: 28px;
+  min-width: 0;
+  flex: 1;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.category-nav__links::-webkit-scrollbar {
+  display: none;
+}
+
+.category-nav__link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 48px;
+  font-size: 14px;
+  line-height: 1.2;
+  color: #444444;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.category-nav__link:hover {
+  color: #444444;
+  text-decoration: none;
+}
+
+.category-nav__link--active {
+  font-weight: 700;
+  color: #000000;
+}
+
+.category-nav__link--active:hover {
+  color: #000000;
+}
+
+.category-nav__link--active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: #000000;
+}

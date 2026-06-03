@@ -1,0 +1,155 @@
+.css-ux95hh .css-16uvw1j {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+/* Homepage: full-width gray content — remove white side gutters */
+main .mantine-1620ffq {
+  background: #e7e7e7 !important;
+}
+
+main .mantine-1620ffq .css-ux95hh {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-left: var(--site-gutter, 16px) !important;
+  padding-right: var(--site-gutter, 16px) !important;
+}
+
+.css-ux95hh .css-16uvw1j,
+.css-ux95hh .home-cards-section {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+.css-ux95hh .css-16uvw1j h1.css-17mwv1y {
+  font-size: 28px !important;
+  line-height: 1.2 !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  width: 100% !important;
+  max-width: 900px !important;
+  margin: 0 !important;
+}
+
+@media (min-width: 960px) {
+  .css-ux95hh .css-16uvw1j h1.css-17mwv1y {
+    font-size: 52px !important;
+    line-height: 62px !important;
+  }
+}
+
+.home-hero-search {
+  width: 100%;
+  max-width: 720px;
+  margin: 24px auto 0;
+  padding: 0 var(--site-gutter, 16px);
+  box-sizing: border-box;
+}
+
+@media (min-width: 960px) {
+  .home-hero-search {
+    margin-top: 32px;
+    max-width: 640px;
+  }
+}
+
+.home-hero-search__form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #2d3434;
+  border-radius: 0;
+  padding: 14px 22px;
+  box-sizing: border-box;
+  transition: box-shadow 0.2s ease;
+}
+
+.home-hero-search__form:focus-within {
+  box-shadow: 0 1px 6px rgba(32, 33, 36, 0.28);
+}
+
+.home-hero-search__icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: block;
+}
+
+.home-hero-search__input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  font-size: 16px;
+  line-height: 1.4;
+  color: #000000;
+  background: transparent;
+  font-family: e-Ukraine, sans-serif;
+}
+
+.home-hero-search__input::placeholder {
+  color: #908f8b;
+}
+
+.home-hero-search__input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+
+.home-cards-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+main .css-1jbx5ca,
+.home-cards-section > .css-1jbx5ca {
+  width: 100% !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  box-sizing: border-box;
+}
+
+.home-cards-label {
+  width: 100%;
+  margin: 0 0 16px;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: e-Ukraine, sans-serif;
+  font-size: 16px;
+  line-height: 1.4;
+  font-weight: 400;
+  color: #333333;
+  text-align: center;
+}
+
+/* Поранені — same gray as «Поранені із системи МОУ» on /injured/ */
+a.css-1gooe0[href="/injured/"] > div,
+a.css-1q51wqn[href="/injured/"] > div {
+  background: #908f8b !important;
+  padding: 28px 24px;
+  min-height: 12.5rem;
+  display: flex !important;
+  flex-direction: column;
+  gap: 1.375rem;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+@media (min-width: 960px) {
+  a.css-1q51wqn[href="/injured/"] > div {
+    min-height: 13.75rem;
+    gap: 22px;
+  }
+}
+
+a.css-1gooe0[href="/injured/"] > div .css-6ixod5,
+a.css-1q51wqn[href="/injured/"] > div .css-6ixod5 {
+  color: #ffffff !important;
+}

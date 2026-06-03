@@ -1,0 +1,143 @@
+.internal-page-shell--about .about-page__intro {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  background: #ffffff;
+  padding: 24px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.internal-page-shell--about .about-page__intro .mantine-Text-root.mantine-172zsy7 {
+  width: 100%;
+  max-width: none;
+  margin: 10px 0 0;
+  font-family: e-Ukraine, sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.4;
+  color: inherit;
+}
+
+.internal-page-shell--about .about-page__intro .mantine-Text-root.mantine-172zsy7:first-child {
+  margin-top: 0;
+}
+
+.internal-page-shell--about .about-page__intro .mantine-Text-root.mantine-172zsy7 a {
+  color: #503334;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.internal-page-shell--about .about-page__intro .mantine-Text-root.mantine-172zsy7 a:hover,
+.internal-page-shell--about .about-page__intro .mantine-Text-root.mantine-172zsy7 a:focus-visible {
+  color: #11181c;
+}
+
+.internal-page-shell--about .about-page__social {
+  margin-top: 20px;
+}
+
+.internal-page-shell--about .about-page__social-label {
+  margin: 0 0 12px;
+  font-family: e-Ukraine, sans-serif;
+  font-size: 1rem;
+  line-height: 1.4;
+  font-weight: 400;
+  color: inherit;
+}
+
+.internal-page-shell--about .about-page__social-buttons {
+  margin-top: 0;
+}
+
+@media (max-width: 767px) {
+  .internal-page-shell--about .about-page__social-buttons {
+    flex-direction: column;
+  }
+}
+
+.internal-page-shell--about .about-partners-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.internal-page-shell--about .about-partner-btn {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  min-height: 56px;
+  background: #f4f4f4;
+  color: #000000;
+  border: 2px solid #000000;
+  box-sizing: border-box;
+  text-decoration: none;
+  transition: background-color 200ms ease;
+}
+
+.internal-page-shell--about .about-partner-btn:hover,
+.internal-page-shell--about .about-partner-btn:focus-visible {
+  background: #eeeeee;
+  color: #000000;
+}
+
+.internal-page-shell--about .about-partner-btn__content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 14px 16px;
+  box-sizing: border-box;
+}
+
+.internal-page-shell--about .about-partner-btn__name {
+  font-family: e-Ukraine, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: #000000;
+}
+
+.internal-page-shell--about .about-partner-btn__desc {
+  font-family: e-Ukraine, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: #444444;
+}
+
+.internal-page-shell--about .about-partner-btn__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 56px;
+  align-self: stretch;
+  background: #000000;
+}
+
+.internal-page-shell--about .about-partner-btn__icon img {
+  display: block;
+  width: 24px;
+  height: 24px;
+}
+
+@media (min-width: 960px) {
+  .internal-page-shell--about .about-partner-btn__content {
+    padding: 18px 20px;
+    gap: 6px;
+  }
+
+  .internal-page-shell--about .about-partner-btn__name {
+    font-size: 24px;
+  }
+
+  .internal-page-shell--about .about-partner-btn__desc {
+    font-size: 16px;
+  }
+}
