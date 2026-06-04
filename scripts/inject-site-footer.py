@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-CSS_TAG = '<link rel="stylesheet" href="/css/site-footer.css?v=2"/>'
+CSS_TAG = '<link rel="stylesheet" href="/css/site-footer.css?v=3"/>'
 
 FOOTER_HTML = (
     "<footer>"

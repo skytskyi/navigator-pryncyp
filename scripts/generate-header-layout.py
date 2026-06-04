@@ -11,11 +11,14 @@ from bs4 import BeautifulSoup, Tag
 
 ROOT = Path(__file__).resolve().parent.parent
 
-CATEGORY_LABEL = "Категорії правового навігатора:"
-FOREIGNERS_LABEL = "🌍 For Foreigners"
+CATEGORY_LABEL = "Теми правової допомоги:"
+FOREIGNERS_LABEL = "For Foreigners"
+LANGUAGE_ICON = "/img/language.svg"
 NAVIGATOR_LOGO = "/img/Logo_navigator.png"
 PRYNCYP_LOGO = "/img/Logo_pryncyp.png"
 PRYNCYP_URL = "https://www.pryncyp.org/"
+
+GLOBAL_NAV_PATHS = {"/about/", "/faq/", "/documents/"}
 
 CATEGORIES = [
     {
@@ -118,11 +121,17 @@ def normalize_logo_imgs(soup: BeautifulSoup) -> None:
             img["style"] = "height:30px;width:auto;display:block !important"
 
 
-def category_nav_markup(active_id: str) -> str:
+def should_show_category_nav(path: str) -> bool:
+    if path == "/":
+        return False
+    return get_active_category(path) is not None or path in GLOBAL_NAV_PATHS
+
+
+def category_nav_markup(active_id: str | None) -> str:
     links = []
     for category in CATEGORIES:
         class_name = "category-nav__link"
-        if category["id"] == active_id:
+        if active_id and category["id"] == active_id:
             class_name += " category-nav__link--active"
         links.append(
             f'<a class="{class_name}" href="{category["href"]}">{category["label"]}</a>'
@@ -208,7 +217,7 @@ def remove_navigator_menu(header: Tag) -> None:
         trigger.decompose()
 
 
-def update_foreigners_link(header: Tag) -> None:
+def update_foreigners_link(header: Tag, soup: BeautifulSoup) -> None:
     for link in header.select('a[href*="foreigners.navigator"]'):
         classes = list(link.get("class") or [])
         if "css-bho8e5" not in classes:
@@ -218,12 +227,18 @@ def update_foreigners_link(header: Tag) -> None:
         link["class"] = classes
         for svg in link.select("svg"):
             svg.decompose()
-        label = link.select_one(".mantine-Text-root") or link.select_one(
-            ".mantine-1uguyhf > div:last-child"
-        )
-        if label is not None and label.get_text(strip=True) != FOREIGNERS_LABEL:
-            label.clear()
-            label.append(FOREIGNERS_LABEL)
+        link.clear()
+        wrap = soup.new_tag("div")
+        wrap["class"] = ["mantine-1uguyhf"]
+        icon = soup.new_tag("img", src=LANGUAGE_ICON, alt="", width="18", height="18")
+        icon["class"] = ["header-foreigners-link__icon"]
+        icon["aria-hidden"] = "true"
+        label = soup.new_tag("div")
+        label["class"] = ["mantine-Text-root", "mantine-ykctob"]
+        label.string = FOREIGNERS_LABEL
+        wrap.append(icon)
+        wrap.append(label)
+        link.append(wrap)
 
 
 def fix_dividers(header: Tag) -> None:
@@ -326,12 +341,27 @@ def replace_store_icons_with_download(header: Tag, soup: BeautifulSoup) -> bool:
 
     btn = soup.new_tag("a", href="/download/")
     btn["class"] = ["header-download-btn"]
-    btn.string = "Завантажити"
+    btn.string = "Завантажити додаток"
     search = nav_cluster.select_one('a.header-search-btn[href="/search/"]')
     if search:
         search.insert_after(btn)
     else:
         documents.insert_after(btn)
+    return True
+
+
+DOCUMENTS_NAV_LABEL = "Документи"
+
+
+def normalize_documents_nav_link(header: Tag) -> bool:
+    nav_cluster = header.select_one(".css-zfqabr")
+    if not nav_cluster:
+        return False
+    link = nav_cluster.select_one('a[href="/documents/"]')
+    if not link or link.get_text(strip=True) == DOCUMENTS_NAV_LABEL:
+        return False
+    link.clear()
+    link.append(DOCUMENTS_NAV_LABEL)
     return True
 
 
@@ -417,14 +447,13 @@ def sync_category_nav(soup: BeautifulSoup, path: str) -> None:
     for nav in soup.select(".category-nav"):
         nav.decompose()
 
-    if path == "/":
+    if not should_show_category_nav(path):
         return
 
     active = get_active_category(path)
-    if not active:
-        return
+    active_id = active["id"] if active else None
 
-    chrome = BeautifulSoup(category_nav_markup(active["id"]), "html.parser").select_one(
+    chrome = BeautifulSoup(category_nav_markup(active_id), "html.parser").select_one(
         ".category-nav-chrome"
     )
     if chrome:
@@ -457,19 +486,22 @@ def is_header_already_baked(soup: BeautifulSoup, path: str) -> bool:
         if not nav_cluster.select_one('a.header-search-btn[href="/search/"]'):
             return False
 
-    active = get_active_category(path) if path != "/" else None
+    show_nav = should_show_category_nav(path)
     nav = soup.select_one(".category-nav")
-    if active and not nav:
+    if show_nav and not nav:
         return False
-    if not active and nav:
+    if not show_nav and nav:
         return False
 
+    active = get_active_category(path)
     if active and nav:
         active_link = nav.select_one(".category-nav__link--active")
         if not active_link or normalize_path(active_link.get("href") or "") != normalize_path(
             active["href"]
         ):
             return False
+    if show_nav and not active and nav and nav.select_one(".category-nav__link--active"):
+        return False
     return True
 
 
@@ -484,8 +516,10 @@ def bake_page(html_path: Path, force: bool = False) -> bool:
     if not force and is_header_already_baked(soup, path):
         normalize_logo_imgs(soup)
         inject_faq_nav_link(header, soup)
+        normalize_documents_nav_link(header)
         inject_header_search_link(header, soup)
         replace_store_icons_with_download(header, soup)
+        update_foreigners_link(header, soup)
         nav_cluster = header.select_one(".css-zfqabr")
         if nav_cluster:
             clean_nav_cluster(nav_cluster)
@@ -501,11 +535,12 @@ def bake_page(html_path: Path, force: bool = False) -> bool:
     normalize_logo_imgs(soup)
     remove_search(header)
     remove_navigator_menu(header)
-    update_foreigners_link(header)
+    update_foreigners_link(header, soup)
     fix_dividers(header)
     normalize_header_bar(header_bar)
     repair_header_nav_bar(header_bar)
     inject_faq_nav_link(header, soup)
+    normalize_documents_nav_link(header)
     inject_header_search_link(header, soup)
     replace_store_icons_with_download(header, soup)
     nav_cluster = header.select_one(".css-zfqabr")

@@ -7,9 +7,9 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-CSS_TAG = '<link rel="stylesheet" href="/css/header-logos.css?v=18"/>'
+CSS_TAG = '<link rel="stylesheet" href="/css/header-logos.css?v=20"/>'
 GLOBAL_CSS_TAG = '<link rel="stylesheet" href="/css/site-global.css?v=3"/>'
-MOBILE_CSS_TAG = '<link rel="stylesheet" href="/css/mobile-menu.css?v=29"/>'
+MOBILE_CSS_TAG = '<link rel="stylesheet" href="/css/mobile-menu.css?v=38"/>'
 HEADER_CRITICAL_STYLE = (
     '  <style id="header-critical">'
     "header .css-1bgjytp.mantine-ahbyky,header .css-1bgjytp.mantine-sel6jv{background:#fff!important;opacity:1!important}"
@@ -28,8 +28,8 @@ LOGO_PRELOAD = (
 )
 PERSIST_SCRIPT = '<script src="/js/header-persist.js?v=2"></script>'
 PATCH_RUNTIME_HEAD = '<script src="/js/patch-runtime.js?v=5"></script>'
-JS_TAG = '<script src="/js/header-logos.js?v=15"></script>'
-MOBILE_JS_TAG = '<script src="/js/mobile-menu.js?v=21"></script>'
+JS_TAG = '<script src="/js/header-logos.js?v=16"></script>'
+MOBILE_JS_TAG = '<script src="/js/mobile-menu.js?v=29"></script>'
 BODY_PERSIST_RE = re.compile(r"<body>", re.IGNORECASE)
 
 
@@ -155,7 +155,7 @@ def upsert_mobile_assets(text: str) -> tuple[str, bool]:
     else:
         new_text = re.sub(
             r'href="/css/mobile-menu\.css\?v=\d+"',
-            'href="/css/mobile-menu.css?v=29"',
+            'href="/css/mobile-menu.css?v=38"',
             text,
         )
         if new_text != text:
@@ -176,7 +176,7 @@ def upsert_mobile_assets(text: str) -> tuple[str, bool]:
     else:
         new_text = re.sub(
             r'src="/js/mobile-menu\.js\?v=\d+"',
-            'src="/js/mobile-menu.js?v=21"',
+            'src="/js/mobile-menu.js?v=29"',
             text,
         )
         if new_text != text:
@@ -209,7 +209,7 @@ def main() -> None:
 
         new_text = re.sub(
             r'href="/css/header-logos\.css\?v=\d+"',
-            'href="/css/header-logos.css?v=18"',
+            'href="/css/header-logos.css?v=20"',
             text,
         )
         if new_text != text:
@@ -219,7 +219,7 @@ def main() -> None:
 
         new_text = re.sub(
             r'src="/js/header-logos\.js\?v=\d+"',
-            'src="/js/header-logos.js?v=15"',
+            'src="/js/header-logos.js?v=16"',
             text,
         )
         if new_text != text:

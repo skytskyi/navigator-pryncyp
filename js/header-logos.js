@@ -2,7 +2,24 @@
   var PRYNCYP_URL = "https://www.pryncyp.org/";
   var NAVIGATOR_LOGO = "/img/Logo_navigator.png";
   var PRYNCYP_LOGO = "/img/Logo_pryncyp.png";
-  var FOREIGNERS_LABEL = "🌍 For Foreigners";
+  var FOREIGNERS_LABEL = "For Foreigners";
+  var LANGUAGE_ICON = "/img/language.svg";
+
+  function languageIconSrc() {
+    return typeof siteUrl === "function" ? siteUrl(LANGUAGE_ICON) : LANGUAGE_ICON;
+  }
+
+  function foreignersLinkHtml() {
+    return (
+      '<div class="mantine-1uguyhf">' +
+      '<img class="header-foreigners-link__icon" src="' +
+      languageIconSrc() +
+      '" width="18" height="18" alt="" aria-hidden="true"/>' +
+      '<div class="mantine-Text-root mantine-ykctob">' +
+      FOREIGNERS_LABEL +
+      "</div></div>"
+    );
+  }
   var headerObserver = null;
   var headerPatchFrame = null;
 
@@ -196,12 +213,17 @@
       link.querySelectorAll("svg").forEach(function (svg) {
         svg.remove();
       });
-      var label =
-        link.querySelector(".mantine-Text-root") ||
-        link.querySelector(".mantine-1uguyhf > div:last-child");
-      if (label && label.textContent !== FOREIGNERS_LABEL) {
-        label.textContent = FOREIGNERS_LABEL;
+      var icon = link.querySelector(".header-foreigners-link__icon");
+      var label = link.querySelector(".mantine-Text-root");
+      if (
+        icon &&
+        label &&
+        label.textContent.trim() === FOREIGNERS_LABEL &&
+        icon.getAttribute("width") === "18"
+      ) {
+        return;
       }
+      link.innerHTML = foreignersLinkHtml();
     });
   }
 
@@ -333,6 +355,7 @@
   function runPatch() {
     if (isHeaderBaked()) {
       repairHeaderNavCluster();
+      updateForeignersLink();
       fixNextImages();
       return;
     }

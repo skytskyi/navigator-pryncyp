@@ -1,5 +1,5 @@
 (function () {
-  var LABEL = "Категорії правового навігатора:";
+  var LABEL = "Теми правової допомоги:";
   var TREE_URL = "/data/site-nav-tree.json?v=1";
   var TREE_CACHE_KEY = "site-nav-tree-v1";
   var MOBILE_TREE_MAX_WIDTH = 960;
@@ -49,9 +49,9 @@
   var DRAWER_MENU_ITEMS = [
     { href: "/about/", label: "Про нас" },
     { href: "/faq/", label: "FAQ" },
-    { href: "/documents/", label: "Перелік документів" },
+    { href: "/documents/", label: "Документи" },
     { href: "/search/", label: "Пошук", icon: "/img/search.svg" },
-    { href: "/download/", label: "Завантажити" },
+    { href: "/download/", label: "Завантажити додаток" },
   ];
 
   try {
@@ -401,11 +401,55 @@
     });
   }
 
+  var FOREIGNERS_LABEL = "For Foreigners";
+  var LANGUAGE_ICON = "/img/language.svg";
+  var EXIT_MENU_ICON = "/img/exit-menu.svg";
+
+  function languageIconSrc() {
+    return typeof siteUrl === "function" ? siteUrl(LANGUAGE_ICON) : LANGUAGE_ICON;
+  }
+
+  function exitMenuIconSrc() {
+    return typeof siteUrl === "function" ? siteUrl(EXIT_MENU_ICON) : EXIT_MENU_ICON;
+  }
+
   function removeForeignersDrawerIcon(drawerBody) {
     drawerBody.querySelectorAll('a[href*="foreigners.navigator"]').forEach(function (link) {
       link.querySelectorAll("svg").forEach(function (svg) {
         svg.remove();
       });
+    });
+  }
+
+  function ensureForeignersDrawerLink(drawerBody) {
+    drawerBody.querySelectorAll('a[href*="foreigners.navigator"]').forEach(function (link) {
+      link.querySelectorAll("svg").forEach(function (svg) {
+        svg.remove();
+      });
+
+      var inner = link.querySelector(".mobile-menu-item__inner, .mantine-1xkg0b8");
+      if (!inner) {
+        inner = document.createElement("span");
+        inner.className = "mantine-1xkg0b8 mobile-menu-item__inner";
+        link.textContent = "";
+        link.appendChild(inner);
+      } else {
+        inner.classList.add("mobile-menu-item__inner");
+      }
+
+      var icon = inner.querySelector(".header-foreigners-link__icon");
+      var label = inner.querySelector(".mobile-menu-item__label");
+      if (icon && label && label.textContent.trim() === FOREIGNERS_LABEL) {
+        return;
+      }
+
+      inner.innerHTML =
+        '<img class="header-foreigners-link__icon" src="' +
+        languageIconSrc() +
+        '" width="18" height="18" alt="" aria-hidden="true"/>' +
+        '<span class="mobile-menu-item__label">' +
+        FOREIGNERS_LABEL +
+        "</span>";
     });
   }
 
@@ -492,21 +536,29 @@
   }
 
   function fixDrawerCloseIcon(drawerBody) {
-    drawerBody.querySelectorAll('img[alt="exit-menu"]').forEach(function (img) {
-      if (img.dataset.mobileExitFixed === "1") {
-        return;
-      }
-      if (!img.naturalWidth) {
-        img.src = "/_next/static/media/exit.7e0a2479.svg";
-        img.removeAttribute("srcset");
-        img.removeAttribute("srcSet");
-      }
-
+    var scope =
+      drawerBody.closest(".static-mobile-drawer__content, .mantine-Drawer-content") ||
+      drawerBody;
+    scope.querySelectorAll('img[alt="exit-menu"]').forEach(function (img) {
+      img.src = exitMenuIconSrc();
+      img.removeAttribute("srcset");
+      img.removeAttribute("srcSet");
       img.setAttribute("width", "24");
       img.setAttribute("height", "24");
       img.style.width = "24px";
       img.style.height = "24px";
-      img.dataset.mobileExitFixed = "1";
+
+      var button = img.closest("button");
+      if (button) {
+        button.style.width = "34px";
+        button.style.height = "34px";
+        button.style.minWidth = "34px";
+        button.style.minHeight = "34px";
+        button.style.display = "inline-flex";
+        button.style.alignItems = "center";
+        button.style.justifyContent = "center";
+        button.style.padding = "0";
+      }
     });
   }
 
@@ -626,13 +678,18 @@
     html += ">";
 
     if (item.icon) {
+      var iconSize = item.href === "/search/" ? 18 : 28;
       html +=
         '<span class="mantine-1xkg0b8">' +
         '<img alt="' +
         escapeHtml(item.iconAlt || "") +
         '" src="' +
         item.icon +
-        '" width="28" height="28" />';
+        '" width="' +
+        iconSize +
+        '" height="' +
+        iconSize +
+        '" />';
       if (item.label) {
         html += escapeHtml(item.label);
       }
@@ -653,8 +710,13 @@
     html +=
       '<div class="mantine-Stack-root">' +
       '<a class="css-noumbc" href="https://foreigners.navigator.pryncyp.org">' +
-      '<span class="mantine-1xkg0b8">🌍 For Foreigners</span>' +
-      "</a></div>";
+      '<span class="mantine-1xkg0b8 mobile-menu-item__inner">' +
+      '<img class="header-foreigners-link__icon" src="' +
+      languageIconSrc() +
+      '" width="18" height="18" alt="" aria-hidden="true"/>' +
+      '<span class="mobile-menu-item__label">' +
+      FOREIGNERS_LABEL +
+      "</span></span></a></div>";
     return html;
   }
 
@@ -739,7 +801,9 @@
       '<div class="mantine-Drawer-content static-mobile-drawer__content" role="dialog" aria-modal="true">' +
       '<div class="mantine-Drawer-header static-mobile-drawer__header">' +
       '<button type="button" class="static-mobile-drawer__close mantine-UnstyledButton-root" data-static-drawer-close="1" aria-label="Закрити меню">' +
-      '<img alt="exit-menu" src="/_next/static/media/exit.7e0a2479.svg" width="24" height="24" />' +
+      '<img alt="exit-menu" src="' +
+      exitMenuIconSrc() +
+      '" width="24" height="24" />' +
       "</button></div>" +
       '<div class="mantine-Drawer-body static-mobile-drawer__body">' +
       '<div class="mantine-w2f2ab">' +
@@ -796,6 +860,7 @@
     hideDrawerSearch(drawerBody);
     fixDrawerCloseIcon(drawerBody);
     removeForeignersDrawerIcon(drawerBody);
+    ensureForeignersDrawerLink(drawerBody);
 
     var content = drawerBody.querySelector(".mantine-w2f2ab");
     if (!content) {

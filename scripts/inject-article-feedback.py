@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SECTION_DIRS = frozenset(
     {"serviceman", "injured", "injured-military", "ingured-mia", "veterans", "pow", "family"}
 )
-CSS_TAG = '<link rel="stylesheet" href="/css/article-feedback.css?v=6"/>'
+CSS_TAG = '<link rel="stylesheet" href="/css/article-feedback.css?v=7"/>'
 JS_TAG = '<script src="/js/article-feedback.js?v=6"></script>'
 
 
@@ -26,7 +26,7 @@ def upsert_css(text: str) -> tuple[str, bool]:
     changed = False
     new_text = re.sub(
         r'href="/css/article-feedback\.css\?v=\d+"',
-        'href="/css/article-feedback.css?v=6"',
+        'href="/css/article-feedback.css?v=7"',
         text,
     )
     if new_text != text:

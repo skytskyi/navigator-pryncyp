@@ -8,7 +8,7 @@ from pathlib import Path
 import re
 
 ROOT = Path(__file__).resolve().parent.parent
-CSS_TAG = '<link rel="stylesheet" href="/css/internal-layout.css?v=77"/>'
+CSS_TAG = '<link rel="stylesheet" href="/css/internal-layout.css?v=83"/>'
 CRITICAL_BLOCK = (
     '  <style id="internal-layout-critical">'
     "html.internal-layout-active main.css-yp9swi{visibility:visible}"
@@ -71,7 +71,7 @@ def main() -> None:
 
         new_text = re.sub(
             r'href="/css/internal-layout\.css\?v=\d+"',
-            'href="/css/internal-layout.css?v=77"',
+            'href="/css/internal-layout.css?v=83"',
             text,
         )
         if new_text != text:

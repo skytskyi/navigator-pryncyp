@@ -1,5 +1,5 @@
 (function () {
-  var HOME_TITLE = "Отримайте правову допомогу, яка вам потрібна";
+  var HOME_TITLE = "Знайдіть відповіді на свої правові питання";
   var SEARCH_PLACEHOLDER = "Пошук за темою або послугою";
 
   function isHomePage() {
@@ -14,6 +14,10 @@
     return typeof siteUrl === "function" ? siteUrl("/search/") : "/search/";
   }
 
+  function searchIconUrl() {
+    return typeof siteUrl === "function" ? siteUrl("/img/search.svg") : "/img/search.svg";
+  }
+
   function getHeroBlock() {
     return (
       document.querySelector(".css-ux95hh .css-16uvw1j") ||
@@ -21,22 +25,61 @@
     );
   }
 
+  function submitActionsHtml() {
+    return (
+      '<span class="app-search-form__divider" aria-hidden="true"></span>' +
+      '<button type="submit" class="home-hero-search__submit app-search-form__submit">' +
+      '<img class="app-search-form__submit-icon" src="' +
+      searchIconUrl() +
+      '" width="20" height="20" alt="" aria-hidden="true"/>' +
+      '<span class="app-search-form__submit-label">Шукати</span>' +
+      "</button>"
+    );
+  }
+
   function searchHtml() {
     return (
       '<div class="home-hero-search">' +
-      '<form class="home-hero-search__form" role="search" action="' +
+      '<form class="home-hero-search__form app-search-form" role="search" action="' +
       searchActionUrl() +
       '" method="get">' +
-      '<img class="home-hero-search__icon" src="/_next/static/media/search.1af3630f.svg" alt="" aria-hidden="true"/>' +
-      '<input type="search" class="home-hero-search__input" name="q" ' +
+      '<input type="search" class="home-hero-search__input app-search-form__input" name="q" ' +
       'placeholder="' +
       SEARCH_PLACEHOLDER +
       '" aria-label="' +
       SEARCH_PLACEHOLDER +
       '"/>' +
+      submitActionsHtml() +
       "</form>" +
       "</div>"
     );
+  }
+
+  function upgradeSearchForm(search) {
+    var form = search.querySelector("form");
+    if (!form) {
+      return;
+    }
+
+    form.classList.add("app-search-form");
+
+    var icon = form.querySelector(".home-hero-search__icon");
+    if (icon) {
+      icon.remove();
+    }
+
+    var input = form.querySelector(".home-hero-search__input");
+    if (input) {
+      input.classList.add("app-search-form__input");
+    }
+
+    if (!form.querySelector(".app-search-form__submit")) {
+      var wrap = document.createElement("div");
+      wrap.innerHTML = submitActionsHtml();
+      while (wrap.firstChild) {
+        form.appendChild(wrap.firstChild);
+      }
+    }
   }
 
   function bindSearchForm(search) {
@@ -68,6 +111,8 @@
       } else {
         block.insertBefore(search, block.firstChild);
       }
+    } else {
+      upgradeSearchForm(search);
     }
 
     var input = search.querySelector(".home-hero-search__input");

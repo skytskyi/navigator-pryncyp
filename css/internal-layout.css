@@ -75,6 +75,12 @@ body:has(.category-nav) .internal-page-shell {
   padding: 8px 0 12px;
 }
 
+@media (min-width: 961px) {
+  .internal-sidebar__tree > .internal-tree-list {
+    padding-left: 16px;
+  }
+}
+
 .internal-tree-list,
 .internal-tree-list ul {
   list-style: none;
@@ -560,7 +566,7 @@ body:has(.category-nav) .internal-page-shell {
   margin: 0 0 16px;
   font-size: 14px;
   line-height: 1.4;
-  color: #11181c;
+  color: #707070;
 }
 
 .internal-subcats__list {
@@ -578,12 +584,14 @@ body:has(.category-nav) .internal-page-shell {
   box-sizing: border-box;
   color: #ffffff;
   text-decoration: none;
+  transition: filter 0.2s ease;
 }
 
-.internal-strip:hover {
+.internal-strip:hover,
+.internal-strip:focus-visible {
   color: #ffffff;
   text-decoration: none;
-  filter: brightness(0.97);
+  filter: brightness(0.9);
 }
 
 .internal-strip__icon {
@@ -594,9 +602,26 @@ body:has(.category-nav) .internal-page-shell {
 }
 
 .internal-strip__label {
+  flex: 1 1 auto;
+  min-width: 0;
   font-size: 18px;
   line-height: 1.3;
   font-weight: 400;
+}
+
+.internal-strip::after {
+  flex-shrink: 0;
+  margin-left: auto;
+  content: "";
+  width: 24px;
+  height: 24px;
+  background: url("/img/Arrow.svg") center / 24px 24px no-repeat;
+  transition: transform 0.2s ease;
+}
+
+.internal-strip:hover::after,
+.internal-strip:focus-visible::after {
+  transform: translateX(4px);
 }
 
 .internal-layout-active .css-ux95hh {
@@ -1236,5 +1261,20 @@ body:has(.category-nav) .internal-page-shell {
 
   .internal-strip__label {
     font-size: 16px;
+  }
+
+  .internal-strip::after {
+    content: "";
+    width: 24px;
+    height: 24px;
+    padding-right: 0;
+    background: url("/img/Arrow.svg") center / 24px 24px no-repeat;
+    transition: transform 0.2s ease;
+  }
+
+  .internal-strip:hover::after,
+  .internal-strip:focus-visible::after {
+    background-position: center;
+    transform: translateX(4px);
   }
 }

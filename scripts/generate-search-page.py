@@ -14,10 +14,13 @@ SEARCH_PATH = ROOT / "search" / "index.html"
 PAGE_TITLE = "Пошук"
 SEARCH_MARKUP = """
 <div class="site-search-page">
-  <form class="site-search-page__form" role="search" action="/search/" method="get">
-    <img class="site-search-page__icon" src="/_next/static/media/search.1af3630f.svg" alt="" aria-hidden="true" width="20" height="20"/>
-    <input type="search" class="site-search-page__input" name="q" placeholder="Пошук за темою або послугою" aria-label="Пошук за темою або послугою" autocomplete="off"/>
-    <button type="submit" class="site-search-page__submit">Шукати</button>
+  <form class="site-search-page__form app-search-form" role="search" action="/search/" method="get">
+    <input type="search" class="site-search-page__input app-search-form__input" name="q" placeholder="Пошук за темою або послугою" aria-label="Пошук за темою або послугою" autocomplete="off"/>
+    <span class="app-search-form__divider" aria-hidden="true"></span>
+    <button type="submit" class="site-search-page__submit app-search-form__submit">
+      <img class="app-search-form__submit-icon" src="/img/search.svg" width="20" height="20" alt="" aria-hidden="true"/>
+      <span class="app-search-form__submit-label">Шукати</span>
+    </button>
   </form>
   <p class="site-search-page__meta is-hidden" data-site-search-meta></p>
   <div class="site-search-page__tabs is-hidden" data-site-search-tabs role="tablist" aria-label="Фільтр результатів пошуку"></div>
@@ -27,8 +30,9 @@ SEARCH_MARKUP = """
 
 
 def upsert_assets(soup: BeautifulSoup) -> None:
-    css_href = "/css/site-search.css?v=5"
-    js_href = "/js/site-search.js?v=5"
+    css_href = "/css/site-search.css?v=7"
+    app_css_href = "/css/app-search.css?v=1"
+    js_href = "/js/site-search.js?v=6"
 
     existing_css = soup.select_one('link[href*="site-search.css"]')
     if existing_css:
@@ -38,6 +42,17 @@ def upsert_assets(soup: BeautifulSoup) -> None:
         tag = BeautifulSoup(f'<link href="{css_href}" rel="stylesheet"/>', "html.parser")
         if internal_css:
             internal_css.insert_after(tag)
+        elif soup.head:
+            soup.head.append(tag)
+
+    existing_app_css = soup.select_one('link[href*="app-search.css"]')
+    if existing_app_css:
+        existing_app_css["href"] = app_css_href
+    else:
+        site_css = soup.select_one('link[href*="site-search.css"]')
+        tag = BeautifulSoup(f'<link href="{app_css_href}" rel="stylesheet"/>', "html.parser")
+        if site_css:
+            site_css.insert_after(tag)
         elif soup.head:
             soup.head.append(tag)
 

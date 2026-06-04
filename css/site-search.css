@@ -27,65 +27,6 @@
   max-width: 275px;
 }
 
-.site-search-page__form {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  background: #ffffff;
-  border: 1px solid #2d3434;
-  border-radius: 0;
-  padding: 14px 16px;
-  box-sizing: border-box;
-}
-
-.site-search-page__form:focus-within {
-  outline: 2px solid #000000;
-  outline-offset: 1px;
-}
-
-.site-search-page__icon {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-  display: block;
-}
-
-.site-search-page__input {
-  flex: 1;
-  min-width: 0;
-  border: 0;
-  outline: none;
-  font-family: e-Ukraine, sans-serif;
-  font-size: 16px;
-  line-height: 1.4;
-  color: #000000;
-  background: transparent;
-}
-
-.site-search-page__input::placeholder {
-  color: #908f8b;
-}
-
-.site-search-page__submit {
-  flex-shrink: 0;
-  padding: 10px 18px;
-  border: 2px solid #000000;
-  border-radius: 0;
-  background: #000000;
-  color: #ffffff;
-  font-family: e-Ukraine, sans-serif;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.2;
-  cursor: pointer;
-}
-
-.site-search-page__submit:hover,
-.site-search-page__submit:focus-visible {
-  background: #222222;
-}
-
 .site-search-page__meta {
   margin: 20px 0 0;
   font-size: 14px;
@@ -244,14 +185,6 @@
 }
 
 @media (max-width: 959px) {
-  .site-search-page__form {
-    flex-wrap: wrap;
-  }
-
-  .site-search-page__submit {
-    width: 100%;
-  }
-
   .site-search-page__tabs {
     gap: 16px;
   }

@@ -45,61 +45,17 @@ main .mantine-1620ffq .css-ux95hh {
 
 .home-hero-search {
   width: 100%;
-  max-width: 720px;
-  margin: 24px auto 0;
-  padding: 0 var(--site-gutter, 16px);
+  max-width: 900px;
+  margin: 8px auto 0;
+  padding: 0;
   box-sizing: border-box;
 }
 
 @media (min-width: 960px) {
   .home-hero-search {
-    margin-top: 32px;
-    max-width: 640px;
+    margin-top: 12px;
+    max-width: 900px;
   }
-}
-
-.home-hero-search__form {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  background: #ffffff;
-  border: 1px solid #2d3434;
-  border-radius: 0;
-  padding: 14px 22px;
-  box-sizing: border-box;
-  transition: box-shadow 0.2s ease;
-}
-
-.home-hero-search__form:focus-within {
-  box-shadow: 0 1px 6px rgba(32, 33, 36, 0.28);
-}
-
-.home-hero-search__icon {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-  display: block;
-}
-
-.home-hero-search__input {
-  flex: 1;
-  min-width: 0;
-  border: 0;
-  outline: none;
-  font-size: 16px;
-  line-height: 1.4;
-  color: #000000;
-  background: transparent;
-  font-family: e-Ukraine, sans-serif;
-}
-
-.home-hero-search__input::placeholder {
-  color: #908f8b;
-}
-
-.home-hero-search__input::-webkit-search-cancel-button {
-  -webkit-appearance: none;
 }
 
 .home-cards-section {
@@ -118,34 +74,174 @@ main .css-1jbx5ca,
 
 .home-cards-label {
   width: 100%;
-  margin: 0 0 16px;
+  margin: 2px 0 12px;
   padding: 0;
   box-sizing: border-box;
   font-family: e-Ukraine, sans-serif;
-  font-size: 16px;
+  font-size: 14px;
   line-height: 1.4;
   font-weight: 400;
-  color: #333333;
+  color: #616161;
   text-align: center;
+}
+
+/* Mobile: compact strip cards (icon left, label right) like hub pages */
+@media (max-width: 959px) {
+  main .mantine-1620ffq .css-ux95hh {
+    height: auto !important;
+    min-height: 0 !important;
+    padding-top: 24px !important;
+  }
+
+  .css-ux95hh .css-16uvw1j {
+    margin: 20px 0 16px !important;
+  }
+
+  .home-hero-search {
+    margin-top: 4px;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .home-cards-label {
+    margin-top: 2px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    line-height: 1.35;
+  }
+
+  .home-cards-section > .css-1jbx5ca.mantine-17do081,
+  .home-cards-section > .css-1jbx5ca {
+    gap: 8px !important;
+  }
+
+  a.css-1gooe0 {
+    gap: 0 !important;
+  }
+
+  a.css-1gooe0 > div {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 16px !important;
+    width: 100% !important;
+    min-height: 72px !important;
+    height: auto !important;
+    padding: 14px 16px !important;
+    box-sizing: border-box !important;
+  }
+
+  a.css-1gooe0 > div .css-4gnbsq {
+    width: 44px !important;
+    height: 44px !important;
+    max-width: 44px !important;
+    max-height: 44px !important;
+    flex-shrink: 0 !important;
+    object-fit: contain;
+  }
+
+  a.css-1gooe0 > div .css-6ixod5 {
+    margin: 0 !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    text-align: left !important;
+    font-size: 16px !important;
+    line-height: 1.3 !important;
+  }
+}
+
+/* Homepage category cards — hover + CTA */
+a.css-1gooe0 > div,
+a.css-1q51wqn > div {
+  transition: filter 0.2s ease;
+}
+
+a.css-1gooe0:hover > div,
+a.css-1gooe0:focus-visible > div,
+a.css-1q51wqn:hover > div,
+a.css-1q51wqn:focus-visible > div {
+  filter: brightness(0.9);
+}
+
+@media (min-width: 960px) {
+  a.css-1q51wqn > div {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+  }
+
+  a.css-1q51wqn > div .css-6ixod5 {
+    flex: 0 1 auto !important;
+  }
+
+  a.css-1q51wqn > div::after {
+    content: none;
+    display: none;
+  }
+
+  a.css-1q51wqn > div .home-card-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: auto;
+    padding-top: 14px;
+    font-family: e-Ukraine, sans-serif;
+    font-size: 13px;
+    line-height: 1;
+    font-weight: 400;
+    color: #ffffff;
+    opacity: 0.95;
+    white-space: nowrap;
+  }
+
+  a.css-1q51wqn > div .home-card-cta__arrow {
+    display: block;
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+  }
+
+  a.css-1q51wqn:hover > div .home-card-cta__arrow,
+  a.css-1q51wqn:focus-visible > div .home-card-cta__arrow {
+    transform: translateX(4px);
+  }
+}
+
+@media (max-width: 959px) {
+  a.css-1gooe0 > div::after {
+    content: "";
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    margin-left: auto;
+    padding-left: 8px;
+    background: url("/img/Arrow.svg") center / 24px 24px no-repeat;
+    transition: transform 0.2s ease;
+  }
+
+  a.css-1gooe0:hover > div::after,
+  a.css-1gooe0:focus-visible > div::after {
+    transform: translateX(4px);
+  }
 }
 
 /* Поранені — same gray as «Поранені із системи МОУ» on /injured/ */
 a.css-1gooe0[href="/injured/"] > div,
 a.css-1q51wqn[href="/injured/"] > div {
   background: #908f8b !important;
-  padding: 28px 24px;
-  min-height: 12.5rem;
-  display: flex !important;
-  flex-direction: column;
-  gap: 1.375rem;
   cursor: pointer;
   box-sizing: border-box;
 }
 
 @media (min-width: 960px) {
   a.css-1q51wqn[href="/injured/"] > div {
-    min-height: 13.75rem;
     gap: 22px;
+    padding: 28px 24px;
+    min-height: 13.75rem;
   }
 }
 

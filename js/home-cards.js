@@ -1,7 +1,7 @@
 (function () {
   var MERGED_HREF = "/injured/";
   var MERGED_TITLE = "Поранені";
-  var CATEGORY_LABEL = "або ж виберіть потрібну вам категорію:";
+  var CATEGORY_LABEL = "Оберіть тему правової допомоги:";
   var INJURED_SUB_RE = /injured-military|ingured-mia/i;
   var DESKTOP_COUNT = 5;
   var CATEGORY_HREFS = {
@@ -226,10 +226,39 @@
     return true;
   }
 
+  function ensureDesktopCardCta() {
+    if (!isHomePage() || !window.matchMedia("(min-width: 960px)").matches) {
+      return false;
+    }
+
+    var arrowSrc =
+      typeof siteUrl === "function" ? siteUrl("/img/Arrow.svg") : "/img/Arrow.svg";
+    var changed = false;
+
+    document.querySelectorAll("a.css-1q51wqn > div").forEach(function (card) {
+      if (card.querySelector(".home-card-cta")) {
+        return;
+      }
+
+      var cta = document.createElement("span");
+      cta.className = "home-card-cta";
+      cta.innerHTML =
+        '<span class="home-card-cta__text">Перейти</span>' +
+        '<img class="home-card-cta__arrow" src="' +
+        arrowSrc +
+        '" width="12" height="12" alt="" aria-hidden="true"/>';
+      card.appendChild(cta);
+      changed = true;
+    });
+
+    return changed;
+  }
+
   function tick() {
     injectCategoryLabel();
     fixCategoryHrefs();
     mergeInjuredCards();
+    ensureDesktopCardCta();
   }
 
   scheduleNavPatches(tick);

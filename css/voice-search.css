@@ -1,0 +1,188 @@
+.home-hero-search__mic,
+.site-search-page__mic {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.home-hero-search__mic:hover,
+.site-search-page__mic:hover {
+  background: #e7e7e7;
+}
+
+.home-hero-search__mic img,
+.site-search-page__mic img {
+  display: block;
+  width: 24px;
+  height: 24px;
+}
+
+.home-hero-search__mic:focus-visible,
+.site-search-page__mic:focus-visible {
+  background: #e7e7e7;
+  outline: 2px solid #000000;
+  outline-offset: 2px;
+}
+
+.voice-dictation-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  background: #ffffff;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.voice-dictation-overlay--open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.voice-dictation-overlay__close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #1f1f1f;
+  font-size: 32px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.voice-dictation-overlay__close:hover,
+.voice-dictation-overlay__close:focus-visible {
+  color: #000000;
+  outline: 2px solid rgba(31, 31, 31, 0.35);
+  outline-offset: 2px;
+}
+
+.voice-dictation-overlay__panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 48px;
+  width: min(100%, 560px);
+}
+
+.voice-dictation-overlay__label {
+  margin: 0;
+  font-family: e-Ukraine, sans-serif;
+  font-size: clamp(32px, 5vw, 48px);
+  line-height: 1.15;
+  font-weight: 300;
+  color: #1f1f1f;
+}
+
+.voice-dictation-overlay__mic-wrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 88px;
+  height: 88px;
+}
+
+.voice-dictation-overlay__pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(232, 93, 76, 0.45);
+  opacity: 0;
+  animation: voice-dictation-pulse 2s ease-out infinite;
+  pointer-events: none;
+}
+
+.voice-dictation-overlay__pulse--delay {
+  animation-delay: 1s;
+}
+
+.voice-dictation-overlay__circle {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: #e85d4c;
+  box-shadow: 0 4px 24px rgba(232, 93, 76, 0.35);
+}
+
+.voice-dictation-overlay__circle img {
+  display: block;
+  width: 36px;
+  height: 36px;
+}
+
+@keyframes voice-dictation-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.65;
+  }
+
+  70% {
+    transform: scale(1.55);
+    opacity: 0.12;
+  }
+
+  100% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+}
+
+body.voice-dictation-open {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-dictation-overlay__pulse {
+    animation: none;
+    opacity: 0.35;
+  }
+
+  .voice-dictation-overlay {
+    transition: none;
+  }
+}
+
+@media (max-width: 639px) {
+  .voice-dictation-overlay__panel {
+    flex-direction: column;
+    gap: 32px;
+    text-align: center;
+  }
+
+  .voice-dictation-overlay__mic-wrap,
+  .voice-dictation-overlay__circle {
+    width: 80px;
+    height: 80px;
+  }
+
+  .voice-dictation-overlay__circle img {
+    width: 32px;
+    height: 32px;
+  }
+}

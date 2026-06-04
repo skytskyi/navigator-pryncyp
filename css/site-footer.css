@@ -46,28 +46,25 @@
 .site-footer__text {
   font-size: 10px;
   line-height: 1.45;
-  color: #000;
-  opacity: 0.5;
+  color: #7a7a7a;
 }
 
 .site-footer__link {
   font-size: 10px;
   line-height: 1.45;
-  color: #000;
-  opacity: 0.85;
+  color: #616161;
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 2px;
-  transition: opacity 0.2s ease, color 0.2s ease;
+  transition: color 0.2s ease;
 }
 
 .site-footer__link:hover,
 .site-footer__link:focus-visible {
-  opacity: 1;
-  color: #11181c;
+  color: #444444;
   text-decoration-thickness: 1.5px;
 }
 
 .site-footer__link:active {
-  opacity: 0.75;
+  color: #525252;
 }

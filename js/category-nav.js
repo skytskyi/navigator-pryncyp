@@ -1,5 +1,5 @@
 (function () {
-  var LABEL = "Категорії правового навігатора:";
+  var LABEL = "Теми правової допомоги:";
   var CATEGORIES = [
     {
       id: "serviceman",
@@ -32,6 +32,18 @@
       prefixes: ["/family"],
     },
   ];
+  var GLOBAL_NAV_PATHS = ["/about/", "/faq/", "/documents/"];
+  var SIDEBAR_WIDTH = 275;
+  var SIDEBAR_CONTENT_GAP = 40;
+  var DEFAULT_SITE_GUTTER = 40;
+
+  function getSiteGutter() {
+    var value = getComputedStyle(document.documentElement)
+      .getPropertyValue("--site-gutter")
+      .trim();
+    var parsed = parseFloat(value);
+    return isNaN(parsed) ? DEFAULT_SITE_GUTTER : parsed;
+  }
 
   function normalizePath(pathname) {
     var path = pathname || "/";
@@ -55,8 +67,19 @@
     return path === "/";
   }
 
+  function isGlobalNavPage() {
+    return GLOBAL_NAV_PATHS.indexOf(normalizePath(window.location.pathname)) !== -1;
+  }
+
+  function shouldShowCategoryNav() {
+    return !isHomePage() && (getActiveCategory() || isGlobalNavPage());
+  }
+
   function getActiveCategory() {
     var path = window.location.pathname;
+    if (typeof stripSiteBasePath === "function") {
+      path = stripSiteBasePath(path);
+    }
     for (var i = 0; i < CATEGORIES.length; i++) {
       var category = CATEGORIES[i];
       for (var j = 0; j < category.prefixes.length; j++) {
@@ -73,7 +96,7 @@
     for (var i = 0; i < CATEGORIES.length; i++) {
       var category = CATEGORIES[i];
       var className = "category-nav__link";
-      if (category.id === activeId) {
+      if (activeId && category.id === activeId) {
         className += " category-nav__link--active";
       }
       html +=
@@ -166,7 +189,42 @@
     return chrome;
   }
 
+  function isStandaloneInternalPage() {
+    return !!document.querySelector(".internal-page-shell--standalone");
+  }
+
+  function getCategoryNavMinPadding() {
+    var label = document.querySelector(".category-nav__label");
+    var nav = document.querySelector(".category-nav");
+    if (!label || !nav) {
+      return null;
+    }
+
+    var navRect = nav.getBoundingClientRect();
+    var labelRect = label.getBoundingClientRect();
+    return Math.round(labelRect.right - navRect.left + 40);
+  }
+
+  function getVirtualSidebarOffset() {
+    var nav = document.querySelector(".category-nav");
+    var shell = document.querySelector(".internal-page-shell");
+    if (!nav || !shell) {
+      return null;
+    }
+
+    var navRect = nav.getBoundingClientRect();
+    var shellRect = shell.getBoundingClientRect();
+    var shellOffset = shellRect.left - navRect.left;
+    return Math.round(
+      Math.max(shellOffset, getSiteGutter()) + SIDEBAR_WIDTH + SIDEBAR_CONTENT_GAP
+    );
+  }
+
   function getInternalContentOffset() {
+    if (isStandaloneInternalPage() || isGlobalNavPage()) {
+      return getVirtualSidebarOffset();
+    }
+
     var mainHeader = document.querySelector(".internal-main-header");
     if (mainHeader) {
       return mainHeader.getBoundingClientRect().left;
@@ -199,23 +257,28 @@
     }
 
     var offset = getInternalContentOffset();
-    if (offset === null) {
+    var minPadding = getCategoryNavMinPadding();
+    if (offset === null && minPadding === null) {
+      inner.style.paddingLeft = "";
       return false;
     }
 
-    inner.style.paddingLeft = Math.max(0, Math.round(offset)) + "px";
+    var padding = offset !== null ? offset : 0;
+    if (minPadding !== null) {
+      padding = Math.max(padding, minPadding);
+    }
+
+    inner.style.paddingLeft = Math.max(0, Math.round(padding)) + "px";
     return true;
   }
 
   function injectCategoryNav() {
-    if (isHomePage()) {
+    if (!shouldShowCategoryNav()) {
       return false;
     }
 
     var activeCategory = getActiveCategory();
-    if (!activeCategory) {
-      return false;
-    }
+    var activeId = activeCategory ? activeCategory.id : null;
 
     var header = getHeader();
     if (!header) {
@@ -225,14 +288,16 @@
     var chrome = ensureCategoryChromeStructure();
     if (chrome) {
       var nav = chrome.querySelector(".category-nav");
-      updateActiveState(nav, activeCategory);
+      if (activeCategory) {
+        updateActiveState(nav, activeCategory);
+      }
       if (chrome.previousElementSibling !== header) {
         header.insertAdjacentElement("afterend", chrome);
       }
       return true;
     }
 
-    header.insertAdjacentHTML("afterend", chromeHtml(activeCategory.id));
+    header.insertAdjacentHTML("afterend", chromeHtml(activeId));
     return true;
   }
 
@@ -275,6 +340,9 @@
 
   function tick() {
     if (isHeaderBaked()) {
+      if (shouldShowCategoryNav() && !getCategoryNav()) {
+        injectCategoryNav();
+      }
       syncCategoryNavLayout();
       return;
     }

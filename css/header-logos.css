@@ -113,6 +113,19 @@ header .css-zfqabr a[href*="foreigners.navigator"]:hover {
   color: #7d7d7d;
 }
 
+header .css-zfqabr a[href*="foreigners.navigator"] .mantine-1uguyhf {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+header .css-zfqabr a[href*="foreigners.navigator"] .header-foreigners-link__icon {
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
 header .css-1bgjytp {
   padding-left: var(--site-gutter) !important;
   padding-right: var(--site-gutter) !important;
@@ -168,12 +181,16 @@ header .header-search-btn img {
   color: #000000;
 }
 
-header .header-search-btn:hover,
+header .header-search-btn:hover {
+  color: #7d7d7d;
+  opacity: 0.8;
+  outline: none;
+}
+
 header .header-search-btn:focus-visible {
   color: #7d7d7d;
   opacity: 0.8;
-  outline: 2px solid #000000;
-  outline-offset: 2px;
+  outline: none;
 }
 
 @media (min-width: 1280px) {

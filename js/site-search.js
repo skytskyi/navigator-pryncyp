@@ -350,11 +350,11 @@
   function updateMetaText(meta, query, filteredCount, tabKey) {
     var countLabel = formatCountLabel(filteredCount);
     if (tabKey === "all") {
-      meta.textContent = countLabel + ' за запитом «' + query + '».';
+      meta.textContent = countLabel + ' за запитом «' + query + '»';
       return;
     }
     meta.textContent =
-      countLabel + ' у розділі «' + getTabLabel(tabKey) + '» за запитом «' + query + '».';
+      countLabel + ' у розділі «' + getTabLabel(tabKey) + '» за запитом «' + query + '»';
   }
 
   function renderResults(query, results) {
