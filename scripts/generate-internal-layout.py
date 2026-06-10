@@ -5,10 +5,13 @@ from __future__ import annotations
 
 import json
 import re
+import ssl
 import sys
+import urllib.error
+import urllib.request
 from html import escape
 from pathlib import Path
-from urllib.parse import quote, unquote
+from urllib.parse import quote, unquote, urlparse
 
 from bs4 import BeautifulSoup, NavigableString, Tag
 
@@ -34,6 +37,13 @@ TITLE_SUFFIX = " | Правовий навігатор"
 CARD_PALETTE = ("#686F4E", "#908F8B", "#61523A", "#503334", "#B29069", "#7D997B")
 DOCUMENT_DOWNLOAD_ICON = "/img/download_24dp.svg"
 TOC_DOC_BADGE_ICON = "/img/paperclip.svg"
+MOBILE_TOC_TOGGLE_ICON = "/img/toc_icon.svg"
+EXTERNAL_LINK_ARROW_ICON = "/img/Arrow%20small%2045.svg"
+INLINE_ATTACH_ICON = "/img/Attach.svg"
+SECTION_DOCUMENTS_H4_ICON = "/img/File.svg"
+EXTERNAL_LINK_ICON_SIZE = "16"
+INLINE_ATTACH_ICON_SIZE = "16"
+SECTION_DOCUMENTS_H4_ICON_SIZE = "20"
 SECTION_H2_CLASS = "internal-section-h2"
 SECTION_H3_CLASS = "internal-section-h3"
 SECTION_H4_CLASS = "internal-section-h4"
@@ -221,6 +231,14 @@ def collect_mobile_toc_items_from_wrap(toc_wrap: Tag) -> list[tuple[str, str, st
     return items
 
 
+def mobile_toc_toggle_button_inner_html() -> str:
+    return (
+        f'<img class="internal-toc-toggle__icon" src="{MOBILE_TOC_TOGGLE_ICON}" alt="" '
+        'width="16" height="16" aria-hidden="true" />'
+        '<span class="internal-toc-toggle__label">Зміст</span>'
+    )
+
+
 def mobile_toc_toggle_markup_from_wrap(toc_wrap: Tag) -> str:
     items = collect_mobile_toc_items_from_wrap(toc_wrap)
     items_html = "".join(
@@ -230,8 +248,8 @@ def mobile_toc_toggle_markup_from_wrap(toc_wrap: Tag) -> str:
     empty_class = "" if items else " internal-toc-toggle-wrap--empty"
     return (
         f'<div class="internal-toc-toggle-wrap{empty_class}">'
-        '<button type="button" class="internal-toc-toggle" aria-label="Зміст сторінки" aria-expanded="false">'
-        '<img src="/img/toc.svg" alt="" width="12" height="12" aria-hidden="true" />'
+        '<button type="button" class="internal-toc-toggle" aria-label="Зміст" aria-expanded="false">'
+        f"{mobile_toc_toggle_button_inner_html()}"
         "</button>"
         '<div class="internal-toc-dropdown" hidden>'
         '<div class="internal-toc-dropdown__panel">'
@@ -249,8 +267,8 @@ def mobile_toc_toggle_markup(toc_items: list[tuple[str, str]]) -> str:
     empty_class = "" if toc_items else " internal-toc-toggle-wrap--empty"
     return (
         f'<div class="internal-toc-toggle-wrap{empty_class}">'
-        '<button type="button" class="internal-toc-toggle" aria-label="Зміст сторінки" aria-expanded="false">'
-        '<img src="/img/toc.svg" alt="" width="12" height="12" aria-hidden="true" />'
+        '<button type="button" class="internal-toc-toggle" aria-label="Зміст" aria-expanded="false">'
+        f"{mobile_toc_toggle_button_inner_html()}"
         "</button>"
         '<div class="internal-toc-dropdown" hidden>'
         '<div class="internal-toc-dropdown__panel">'
@@ -1054,23 +1072,18 @@ def normalize_toc_document_badges(toc_wrap: Tag, main_col: Tag | None = None) ->
         section_id = unquote(href[hash_idx + 1 :]) if hash_idx >= 0 else ""
 
         legacy = container.select_one(".mantine-16hexn0")
-        doc_count = 0
         if legacy:
-            doc_count = parse_legacy_toc_doc_count(legacy)
             legacy.decompose()
             changed = True
-        else:
-            badge_text = container.select_one(".internal-toc-doc-badge__text")
-            if badge_text:
-                doc_count = parse_legacy_toc_doc_count(badge_text)
-                continue
 
-        if doc_count == 0 and main_col and section_id:
+        doc_count = 0
+        if main_col and section_id:
             section = find_toc_section(main_col, section_id)
             if section:
                 actual_id = section.get("id")
                 if actual_id and actual_id != section_id and hash_idx >= 0:
                     link["href"] = "#" + quote(actual_id, safe="")
+                    changed = True
                 doc_count = count_section_downloads(section)
 
         title = re.sub(r"\s*x\s*\d+\s*$", "", link.get_text(strip=True), flags=re.IGNORECASE).strip()
@@ -1371,19 +1384,1195 @@ def fix_toc_wrap(toc_wrap: Tag) -> list[tuple[str, str]]:
     return collect_toc_from_wrap(toc_wrap)
 
 
+def build_external_link_icon_tag(soup: BeautifulSoup, class_name: str) -> Tag:
+    return soup.new_tag(
+        "img",
+        src=EXTERNAL_LINK_ARROW_ICON,
+        alt="",
+        width=EXTERNAL_LINK_ICON_SIZE,
+        height=EXTERNAL_LINK_ICON_SIZE,
+        **{
+            "class": class_name,
+            "aria-hidden": "true",
+            "decoding": "async",
+            "loading": "lazy",
+        },
+    )
+
+
+LEGAL_BASIS_ICON_CLASS = "internal-article-legal-basis__icon"
+
+
+def build_legal_basis_html(href: str, title: str) -> str:
+    icon = (
+        f'<img class="{LEGAL_BASIS_ICON_CLASS}" src="{EXTERNAL_LINK_ARROW_ICON}" alt="" '
+        f'width="{EXTERNAL_LINK_ICON_SIZE}" height="{EXTERNAL_LINK_ICON_SIZE}" '
+        'aria-hidden="true" decoding="async" loading="lazy"/>'
+    )
+    return (
+        '<aside class="internal-article-legal-basis" aria-label="Нормативна основа">'
+        '<p class="internal-article-legal-basis__label">Що регулює</p>'
+        '<p class="internal-article-legal-basis__doc">'
+        f'<a class="internal-article-legal-basis__link" href="{escape(href, quote=True)}" '
+        'target="_blank" rel="noopener noreferrer">'
+        f'<span class="internal-article-legal-basis__link-text">{escape(title)}</span>'
+        f"{icon}"
+        '<span class="internal-article-legal-basis__sr-only"> (відкривається в новій вкладці)</span>'
+        "</a></p></aside>"
+    )
+
+
+def _legal_basis_title_from_link(link: Tag) -> str:
+    sr = link.select_one(".internal-article-legal-basis__sr-only")
+    title = link.get_text(strip=True)
+    if sr:
+        title = title.replace(sr.get_text(strip=True), "").strip()
+    return title
+
+
+def _is_legal_basis_block(block: Tag) -> Tag | None:
+    if block.select_one(".internal-article-legal-basis"):
+        return None
+    bold = block.find("b")
+    if not bold or "Що регулює" not in bold.get_text():
+        return None
+    link = block.find("a", href=True)
+    if not link:
+        return None
+    title = link.get_text(strip=True)
+    href = link.get("href") or ""
+    if not title or not href:
+        return None
+    return link
+
+
+def normalize_legal_basis_blocks(soup: BeautifulSoup) -> bool:
+    changed = False
+    content = soup.select_one(".internal-article-content") or soup
+    candidates: list[Tag] = []
+    for intro_card in content.select(".internal-article-intro-card"):
+        inner = intro_card.find(class_=lambda value: value and "mantine-172zsy7" in value)
+        if inner and _is_legal_basis_block(inner):
+            candidates.append(intro_card)
+    for block in content.select(".mantine-172zsy7"):
+        if block.find_parent(class_=lambda value: value and "internal-article-legal-basis" in (value or [])):
+            continue
+        if block.find_parent(class_=lambda value: value and "internal-article-intro-card" in (value or [])):
+            continue
+        if _is_legal_basis_block(block):
+            candidates.append(block)
+
+    for block in candidates:
+        link = _is_legal_basis_block(
+            block if "internal-article-intro-card" not in (block.get("class") or []) else block.find(class_=lambda value: value and "mantine-172zsy7" in value)
+        )
+        if not link:
+            continue
+        href = link.get("href") or ""
+        title = link.get_text(strip=True)
+        replacement = BeautifulSoup(build_legal_basis_html(href, title), "html.parser")
+        block.replace_with(replacement)
+        changed = True
+
+    for aside in list(content.select(".internal-article-legal-basis")):
+        link = aside.select_one("a[href]")
+        if not link:
+            continue
+        href = link.get("href") or ""
+        title = _legal_basis_title_from_link(link)
+        if not href or not title:
+            continue
+        if aside.select_one(".internal-article-legal-basis__meta"):
+            aside.replace_with(BeautifulSoup(build_legal_basis_html(href, title), "html.parser"))
+            changed = True
+            continue
+        if not aside.select_one(".internal-article-legal-basis__link-text"):
+            aside.replace_with(BeautifulSoup(build_legal_basis_html(href, title), "html.parser"))
+            changed = True
+            continue
+        icon = aside.select_one(f"img.{LEGAL_BASIS_ICON_CLASS}")
+        if icon and icon.get("src") == EXTERNAL_LINK_ARROW_ICON:
+            continue
+        if aside.select_one("svg.internal-article-legal-basis__icon") or (
+            icon and icon.get("src") != EXTERNAL_LINK_ARROW_ICON
+        ):
+            aside.replace_with(BeautifulSoup(build_legal_basis_html(href, title), "html.parser"))
+            changed = True
+
+    return changed
+
+
+AUDIENCE_SWITCH_CLASS = "internal-article-audience-switch"
+AUDIENCE_SWITCH_PAGES: dict[str, dict[str, str]] = {
+    "/injured-military/vlk/": {
+        "audience_id": "mou",
+        "audience_label": "МОУ",
+        "description": "Процедура ВЛК для військовослужбовців ЗСУ (МОУ).",
+        "peer_href": "/ingured-mia/vlk-mia/council/",
+        "peer_id": "mia",
+        "peer_label": "МВС",
+    },
+    "/ingured-mia/vlk-mia/council/": {
+        "audience_id": "mia",
+        "audience_label": "МВС",
+        "description": "Процедура ВЛК для працівників системи МВС (поліція, ДСНС тощо).",
+        "peer_href": "/injured-military/vlk/",
+        "peer_id": "mou",
+        "peer_label": "МОУ",
+    },
+}
+
+
+AUDIENCE_SWITCH_TABS = (
+    {"id": "mou", "label": "МОУ", "href": "/injured-military/vlk/"},
+    {"id": "mia", "label": "МВС", "href": "/ingured-mia/vlk-mia/council/"},
+)
+
+
+def _build_audience_tab(soup: BeautifulSoup, tab: dict[str, str], active_id: str) -> Tag:
+    is_active = tab["id"] == active_id
+    classes = [
+        "internal-article-audience-switch__tab",
+        f"internal-article-audience-switch__tab--{tab['id']}",
+    ]
+    if is_active:
+        classes.append("internal-article-audience-switch__tab--active")
+        element = soup.new_tag(
+            "span",
+            attrs={"class": classes, "aria-current": "page"},
+        )
+        element.string = tab["label"]
+        return element
+
+    element = soup.new_tag(
+        "a",
+        href=tab["href"],
+        attrs={"class": classes},
+    )
+    element.string = tab["label"]
+    return element
+
+
+def build_audience_switch(soup: BeautifulSoup, config: dict[str, str]) -> Tag:
+    aside = soup.new_tag(
+        "aside",
+        attrs={
+            "class": AUDIENCE_SWITCH_CLASS,
+            "aria-label": "Для кого ця інструкція",
+        },
+    )
+    content = soup.new_tag("div", attrs={"class": "internal-article-audience-switch__content"})
+    label = soup.new_tag("p", attrs={"class": "internal-article-audience-switch__label"})
+    label.string = "Для кого ця інструкція"
+    text = soup.new_tag("p", attrs={"class": "internal-article-audience-switch__text"})
+    text.string = config["description"]
+    content.append(label)
+    content.append(text)
+
+    tabs = soup.new_tag(
+        "div",
+        attrs={
+            "class": "internal-article-audience-switch__tabs",
+            "role": "group",
+            "aria-label": "Оберіть систему",
+        },
+    )
+    for tab in AUDIENCE_SWITCH_TABS:
+        tabs.append(_build_audience_tab(soup, tab, config["audience_id"]))
+
+    aside.append(content)
+    aside.append(tabs)
+    return aside
+
+
+def _audience_switch_matches_config(existing: Tag, config: dict[str, str]) -> bool:
+    if not existing.select_one(".internal-article-audience-switch__content"):
+        return False
+    text_el = existing.select_one(".internal-article-audience-switch__text")
+    tab_elements = existing.select(".internal-article-audience-switch__tab")
+    if not text_el or len(tab_elements) != 2:
+        return False
+    if text_el.get_text(strip=True) != config["description"]:
+        return False
+    for tab, expected in zip(tab_elements, AUDIENCE_SWITCH_TABS, strict=True):
+        if tab.get_text(strip=True) != expected["label"]:
+            return False
+        is_active = expected["id"] == config["audience_id"]
+        if is_active != ("internal-article-audience-switch__tab--active" in (tab.get("class") or [])):
+            return False
+        if not is_active and tab.name != "a":
+            return False
+        if not is_active and tab.get("href") != expected["href"]:
+            return False
+    return True
+
+
+def find_audience_switch_insertion_point(content: Tag) -> Tag | None:
+    legal = content.select_one(".internal-article-legal-basis")
+    if legal:
+        return legal
+    intro = content.select_one(".internal-article-intro-card")
+    if intro:
+        return intro
+    section = content.select_one(".css-sdnfq3[id]")
+    if section:
+        return section
+    return content.select_one(".mantine-1fr50if")
+
+
+def normalize_audience_switch(soup: BeautifulSoup, path: str) -> bool:
+    config = AUDIENCE_SWITCH_PAGES.get(normalize_path(path))
+    if not config:
+        return False
+
+    content = soup.select_one(".internal-article-content")
+    if not content:
+        return False
+
+    existing = content.select_one(f"aside.{AUDIENCE_SWITCH_CLASS}")
+    if existing and _audience_switch_matches_config(existing, config):
+        return False
+
+    anchor = find_audience_switch_insertion_point(content)
+    if not anchor:
+        return False
+
+    switch = build_audience_switch(soup, config)
+    if existing:
+        existing.replace_with(switch)
+        return True
+
+    anchor.insert_before(switch)
+    return True
+
+
+ADDITIONAL_SOURCES_H2_RE = re.compile(r"^Додаткові джерела", re.IGNORECASE)
+
+
+def _ensure_sources_list(section: Tag, soup: BeautifulSoup) -> Tag:
+    ul = section.select_one("ul.internal-article-list")
+    if ul:
+        return ul
+    ul = soup.new_tag("ul", attrs={"class": "internal-article-list"})
+    section.append(ul)
+    return ul
+
+
+def _apply_external_link_attrs(link: Tag) -> None:
+    href = link.get("href") or ""
+    if href.startswith("http"):
+        link["target"] = "_blank"
+        link["rel"] = "noopener noreferrer"
+
+
+def normalize_additional_sources_sections(soup: BeautifulSoup) -> bool:
+    changed = False
+    content = soup.select_one(".internal-article-content") or soup
+    for section in content.select(".css-sdnfq3[id]"):
+        h2 = section.find("h2", class_=lambda value: value and "internal-section-h2" in value)
+        if not h2:
+            continue
+        title = h2.get_text(strip=True)
+        if not ADDITIONAL_SOURCES_H2_RE.match(title):
+            continue
+
+        clean_title = title.rstrip(":?").strip()
+        if clean_title != title:
+            h2.string = clean_title
+            changed = True
+
+        ul = _ensure_sources_list(section, soup)
+
+        for wrap in section.select(".mantine-1fv3ct"):
+            for anchor in wrap.select("a.css-uex5rt"):
+                href = anchor.get("href") or ""
+                label_el = anchor.select_one(
+                    f".{DOCUMENT_CARD_TITLE_CLASS}, .css-enb2gh"
+                )
+                label = label_el.get_text(strip=True) if label_el else anchor.get_text(strip=True)
+                if not href or not label:
+                    continue
+                li = soup.new_tag("li")
+                link = soup.new_tag("a", href=href)
+                _apply_external_link_attrs(link)
+                link.string = label
+                li.append(link)
+                ul.append(li)
+                changed = True
+            wrap.decompose()
+            changed = True
+
+        for li in ul.find_all("li", recursive=False):
+            for child in list(li.children):
+                if isinstance(child, NavigableString) and child.strip() in {
+                    ";",
+                    ".",
+                    ",",
+                    ";.",
+                }:
+                    child.extract()
+                    changed = True
+            link = li.find("a", href=True)
+            if link:
+                before = link.get("rel"), link.get("target")
+                _apply_external_link_attrs(link)
+                if (link.get("rel"), link.get("target")) != before:
+                    changed = True
+
+    return changed
+
+
+DOCUMENT_DOWNLOAD_HOSTS = (
+    "storage.googleapis.com",
+    "drive.google.com",
+    "docs.google.com",
+    "view.officeapps.live.com",
+    "turbota.mil.gov.ua",
+)
+OFFICE_VIEWER_RE = re.compile(
+    r"https://view\.officeapps\.live\.com/op/view\.aspx\?src=(.+)",
+    re.IGNORECASE,
+)
+SECTION_DOCUMENTS_H4_LABEL = "Шаблони документів:"
+SECTION_DOCUMENTS_H4_CLASS = (
+    "mantine-Text-root mantine-Title-root mantine-pzgqay internal-section-h4"
+)
+SECTION_DOCUMENTS_H4_DOCUMENTS_CLASS = "internal-section-h4--documents"
+SECTION_DOCUMENTS_H4_ICON_CLASS = "internal-section-doc-icon"
+SECTION_DOCUMENTS_H4_RE = re.compile(
+    r"^📎?\s*(?:Документи|Шаблони документів)\s*:?\s*$",
+    re.IGNORECASE,
+)
+
+
+def is_section_documents_h4_heading(tag: Tag) -> bool:
+    if getattr(tag, "name", None) != "h4":
+        return False
+    classes = tag.get("class") or []
+    if SECTION_DOCUMENTS_H4_DOCUMENTS_CLASS in classes:
+        return True
+    text = tag.get_text(" ", strip=True)
+    return bool(SECTION_DOCUMENTS_H4_RE.match(text))
+
+
+def build_section_documents_h4(soup: BeautifulSoup) -> Tag:
+    h4 = soup.new_tag(
+        "h4",
+        attrs={
+            "class": [
+                *SECTION_DOCUMENTS_H4_CLASS.split(),
+                SECTION_DOCUMENTS_H4_DOCUMENTS_CLASS,
+            ],
+        },
+    )
+    icon = soup.new_tag(
+        "img",
+        src=SECTION_DOCUMENTS_H4_ICON,
+        alt="",
+        width=SECTION_DOCUMENTS_H4_ICON_SIZE,
+        height=SECTION_DOCUMENTS_H4_ICON_SIZE,
+        **{
+            "class": SECTION_DOCUMENTS_H4_ICON_CLASS,
+            "aria-hidden": "true",
+            "decoding": "async",
+            "loading": "lazy",
+        },
+    )
+    h4.append(icon)
+    h4.append(NavigableString(f" {SECTION_DOCUMENTS_H4_LABEL}"))
+    return h4
+
+
+def normalize_section_documents_h4_headings(soup: BeautifulSoup) -> bool:
+    changed = False
+    content = soup.select_one(".internal-article-content") or soup
+    for h4 in content.select("h4.internal-section-h4"):
+        text = h4.get_text(" ", strip=True)
+        if not SECTION_DOCUMENTS_H4_RE.match(text):
+            continue
+        icon = h4.select_one(f"img.{SECTION_DOCUMENTS_H4_ICON_CLASS}")
+        classes = h4.get("class") or []
+        if (
+            icon
+            and SECTION_DOCUMENTS_H4_DOCUMENTS_CLASS in classes
+            and icon.get("src") == SECTION_DOCUMENTS_H4_ICON
+            and icon.get("width") == SECTION_DOCUMENTS_H4_ICON_SIZE
+            and text == SECTION_DOCUMENTS_H4_LABEL
+        ):
+            continue
+        h4.replace_with(build_section_documents_h4(soup))
+        changed = True
+    return changed
+
+
+def normalize_document_href(href: str) -> str:
+    if not href:
+        return href
+    match = OFFICE_VIEWER_RE.match(href)
+    if match:
+        return unquote(match.group(1))
+    malformed = re.match(
+        r"^(https://storage\.googleapis\.com/.+\.(?:docx|doc|pdf|xlsx|xls|pptx|ppt|zip))&.+$",
+        href,
+        re.IGNORECASE,
+    )
+    if malformed:
+        return malformed.group(1)
+    return href
+
+
+def document_href_key(href: str) -> str:
+    return normalize_document_href(href).split("?")[0].lower()
+
+
+def is_document_href(href: str) -> bool:
+    if not href:
+        return False
+    normalized = normalize_document_href(href)
+    host = urlparse(normalized).netloc.lower()
+    if any(host.endswith(item) or host == item for item in DOCUMENT_DOWNLOAD_HOSTS):
+        return True
+    if host.endswith("zakon.rada.gov.ua") and "/laws/file/" in normalized.lower():
+        return True
+    return normalized.lower().split("?")[0].endswith((".docx", ".pdf", ".doc", ".xlsx", ".xls"))
+
+
+def is_inside_document_card(tag: Tag) -> bool:
+    if tag.find_parent("a", class_=lambda value: value and "css-uex5rt" in value):
+        return True
+    return (
+        tag.find_parent(class_=lambda value: value and "mantine-1fv3ct" in (value or []))
+        is not None
+    )
+
+
+def clean_document_card_label(text: str) -> str:
+    cleaned = re.sub(r"\s*\(завантажити документ\)\s*", " ", text, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s*\(відкривається в новій вкладці\)\s*", " ", cleaned, flags=re.IGNORECASE)
+    return re.sub(r"\s+", " ", cleaned).strip()
+
+
+def document_label_from_link(text: str, href: str) -> str:
+    label = re.sub(r"\s+", " ", text.strip()).rstrip(".,;")
+    label = clean_document_card_label(label)
+    if label and len(label) <= 200:
+        return label[0].upper() + label[1:] if len(label) > 1 else label.upper()
+    name = Path(urlparse(normalize_document_href(href)).path).name
+    fallback = unquote(name).replace("_", " ").rsplit(".", 1)[0]
+    return fallback or label or "Документ"
+
+
+DOCUMENT_CARD_CLASS = "internal-article-doc-card"
+DOCUMENT_CARD_TITLE_CLASS = "internal-article-doc-card__title"
+DOCUMENT_CARD_META_CLASS = "internal-article-doc-card__meta"
+DOCUMENT_CARD_BADGE_CLASS = "internal-article-doc-card__badge"
+DOCUMENT_FILE_SIZE_CACHE_PATH = ROOT / "data" / "document-file-sizes.json"
+KNOWN_FILE_EXTENSIONS = (
+    ".pdf",
+    ".docx",
+    ".doc",
+    ".xlsx",
+    ".xls",
+    ".pptx",
+    ".ppt",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".webp",
+    ".svg",
+    ".bmp",
+    ".zip",
+    ".rar",
+    ".7z",
+    ".rtf",
+    ".csv",
+)
+CONTENT_TYPE_TO_EXT = {
+    "application/pdf": "PDF",
+    "application/msword": "DOC",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "DOCX",
+    "application/vnd.ms-excel": "XLS",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "XLSX",
+    "application/vnd.ms-powerpoint": "PPT",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": "PPTX",
+    "image/png": "PNG",
+    "image/jpeg": "JPG",
+    "image/gif": "GIF",
+    "image/webp": "WEBP",
+    "image/svg+xml": "SVG",
+    "application/zip": "ZIP",
+}
+_file_size_cache: dict[str, dict[str, object]] | None = None
+_file_size_cache_dirty = False
+
+
+def get_file_size_cache() -> dict[str, dict[str, object]]:
+    global _file_size_cache
+    if _file_size_cache is not None:
+        return _file_size_cache
+    if DOCUMENT_FILE_SIZE_CACHE_PATH.exists():
+        try:
+            loaded = json.loads(DOCUMENT_FILE_SIZE_CACHE_PATH.read_text(encoding="utf-8"))
+            if isinstance(loaded, dict):
+                _file_size_cache = loaded
+                return _file_size_cache
+        except (json.JSONDecodeError, OSError):
+            pass
+    _file_size_cache = {}
+    return _file_size_cache
+
+
+def persist_file_size_cache_if_needed() -> None:
+    global _file_size_cache_dirty
+    if not _file_size_cache_dirty:
+        return
+    DOCUMENT_FILE_SIZE_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    DOCUMENT_FILE_SIZE_CACHE_PATH.write_text(
+        json.dumps(get_file_size_cache(), ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    _file_size_cache_dirty = False
+
+
+def extension_from_href_path(href: str) -> str | None:
+    path = urlparse(normalize_document_href(href)).path.lower()
+    for ext in KNOWN_FILE_EXTENSIONS:
+        if path.endswith(ext):
+            return ext.lstrip(".").upper()
+    return None
+
+
+def file_badge_variant(ext: str) -> str:
+    ext_l = ext.lower()
+    if ext_l == "pdf":
+        return "pdf"
+    if ext_l in ("doc", "docx", "rtf", "odt"):
+        return "word"
+    if ext_l in ("xls", "xlsx", "csv", "ods"):
+        return "sheet"
+    if ext_l in ("ppt", "pptx", "odp"):
+        return "slides"
+    if ext_l in ("png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "ico"):
+        return "image"
+    if ext_l in ("zip", "rar", "7z", "tar", "gz"):
+        return "archive"
+    return "generic"
+
+
+def badge_label(ext: str) -> str:
+    ext = ext.upper()
+    aliases = {"JPEG": "JPG"}
+    ext = aliases.get(ext, ext)
+    return ext[:4]
+
+
+def format_file_size(num_bytes: int) -> str:
+    if num_bytes < 1024:
+        return f"{num_bytes} B"
+    if num_bytes < 1024 * 1024:
+        return f"{round(num_bytes / 1024)} KB"
+    formatted = f"{num_bytes / (1024 * 1024):.1f} MB"
+    return formatted.replace(".0 MB", " MB")
+
+
+def format_file_meta(ext: str, size: int | None, storage: str | None = None) -> str:
+    if storage == "google-drive":
+        return f"{ext} · Google Drive"
+    if size is not None and size > 0:
+        return f"{ext} · {format_file_size(size)}"
+    return ext
+
+
+GOOGLE_DRIVE_FILE_RE = re.compile(
+    r"https://drive\.google\.com/file/d/([^/?#]+)",
+    re.IGNORECASE,
+)
+
+
+def google_drive_file_id(href: str) -> str | None:
+    match = GOOGLE_DRIVE_FILE_RE.search(normalize_document_href(href))
+    return match.group(1) if match else None
+
+
+def google_drive_export_url(file_id: str) -> str:
+    return f"https://drive.google.com/uc?export=download&id={file_id}"
+
+
+def _head_request_size(href: str) -> tuple[int | None, str | None]:
+    contexts = [ssl.create_default_context(), ssl._create_unverified_context()]
+    last_error: Exception | None = None
+    for context in contexts:
+        try:
+            request = urllib.request.Request(
+                href,
+                method="HEAD",
+                headers={"User-Agent": "navigator.pryncyp.org layout-baker/1.0"},
+            )
+            with urllib.request.urlopen(request, timeout=15, context=context) as response:
+                content_length = response.headers.get("Content-Length")
+                content_type = response.headers.get("Content-Type")
+                size = int(content_length) if content_length and content_length.isdigit() else None
+                return size, content_type
+        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, ValueError) as exc:
+            last_error = exc
+            continue
+    if last_error:
+        raise last_error
+    return None, None
+
+
+def _fetch_bytes_range(href: str, start: int, end: int) -> bytes:
+    contexts = [ssl.create_default_context(), ssl._create_unverified_context()]
+    last_error: Exception | None = None
+    for context in contexts:
+        try:
+            request = urllib.request.Request(
+                href,
+                headers={
+                    "User-Agent": "navigator.pryncyp.org layout-baker/1.0",
+                    "Range": f"bytes={start}-{end}",
+                },
+            )
+            with urllib.request.urlopen(request, timeout=15, context=context) as response:
+                return response.read()
+        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, ValueError) as exc:
+            last_error = exc
+            continue
+    if last_error:
+        raise last_error
+    return b""
+
+
+def extension_from_magic_bytes(payload: bytes) -> str | None:
+    if payload.startswith(b"%PDF"):
+        return "PDF"
+    if payload.startswith(b"\xff\xd8\xff"):
+        return "JPG"
+    if payload.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "PNG"
+    if payload[:4] == b"RIFF" and len(payload) >= 12 and payload[8:12] == b"WEBP":
+        return "WEBP"
+    if payload.startswith(b"GIF8"):
+        return "GIF"
+    return None
+
+
+def _fetch_google_drive_metadata(file_id: str) -> tuple[str, int | None]:
+    export_url = google_drive_export_url(file_id)
+    size: int | None = None
+    content_type: str | None = None
+    try:
+        size, content_type = _head_request_size(export_url)
+    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, OSError):
+        size = None
+
+    ext: str | None = None
+    if content_type:
+        normalized_type = content_type.split(";", 1)[0].strip().lower()
+        ext = CONTENT_TYPE_TO_EXT.get(normalized_type)
+        if normalized_type == "application/pdf":
+            ext = "PDF"
+
+    if not ext:
+        try:
+            ext = extension_from_magic_bytes(_fetch_bytes_range(export_url, 0, 15))
+        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, OSError):
+            ext = None
+
+    return ext or "FILE", size
+
+
+def resolve_file_metadata(href: str) -> tuple[str, int | None, str | None]:
+    global _file_size_cache_dirty
+    normalized = normalize_document_href(href)
+    key = document_href_key(href)
+    cache = get_file_size_cache()
+    ext = extension_from_href_path(href)
+    drive_id = google_drive_file_id(href)
+
+    if drive_id:
+        cached = cache.get(key)
+        if isinstance(cached, dict) and cached.get("storage") == "google-drive":
+            cached_ext = str(cached.get("ext") or "FILE")
+            if cached_ext != "FILE":
+                cached_size = cached.get("size")
+                return (
+                    cached_ext,
+                    cached_size if isinstance(cached_size, int) else None,
+                    "google-drive",
+                )
+
+        ext, size = _fetch_google_drive_metadata(drive_id)
+        cache[key] = {"ext": ext, "size": size, "storage": "google-drive"}
+        _file_size_cache_dirty = True
+        return ext, size, "google-drive"
+
+    cached = cache.get(key)
+    if isinstance(cached, dict):
+        cached_ext = str(cached.get("ext") or ext or "FILE")
+        cached_size = cached.get("size")
+        return cached_ext, cached_size if isinstance(cached_size, int) else None, None
+
+    size: int | None = None
+    content_type: str | None = None
+    try:
+        size, content_type = _head_request_size(normalized)
+    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, OSError):
+        size = None
+
+    if not ext and content_type:
+        ext = CONTENT_TYPE_TO_EXT.get(content_type.split(";", 1)[0].strip().lower())
+    if not ext:
+        ext = "FILE"
+    if content_type and "text/html" in content_type.lower():
+        size = None
+
+    cache[key] = {"ext": ext, "size": size}
+    _file_size_cache_dirty = True
+    return ext, size, None
+
+
+def build_document_card_inner(
+    soup: BeautifulSoup,
+    label: str,
+    ext: str,
+    meta_text: str,
+) -> Tag:
+    inner = soup.new_tag(
+        "div",
+        attrs={"class": f"css-1h5x3dy mantine-1qq82n7 {DOCUMENT_CARD_CLASS}"},
+    )
+    leading = soup.new_tag("div", attrs={"class": "internal-article-doc-card__leading"})
+    badge = soup.new_tag(
+        "span",
+        attrs={
+            "class": [
+                DOCUMENT_CARD_BADGE_CLASS,
+                f"{DOCUMENT_CARD_BADGE_CLASS}--{file_badge_variant(ext)}",
+            ],
+            "aria-hidden": "true",
+        },
+    )
+    badge.string = badge_label(ext)
+    leading.append(badge)
+
+    content = soup.new_tag("div", attrs={"class": "internal-article-doc-card__content"})
+    title = soup.new_tag("p", attrs={"class": f"css-enb2gh {DOCUMENT_CARD_TITLE_CLASS}"})
+    title.string = label
+    meta = soup.new_tag("p", attrs={"class": DOCUMENT_CARD_META_CLASS})
+    meta.string = meta_text
+    content.append(title)
+    content.append(meta)
+
+    icon = soup.new_tag(
+        "img",
+        alt="file-icon",
+        decoding="async",
+        loading="lazy",
+        src=DOCUMENT_DOWNLOAD_ICON,
+        style="color:transparent",
+    )
+    inner.append(leading)
+    inner.append(content)
+    inner.append(icon)
+    return inner
+
+
+def append_document_card(doc_wrap: Tag, soup: BeautifulSoup, label: str, href: str) -> Tag:
+    normalized_href = normalize_document_href(href)
+    ext, size, storage = resolve_file_metadata(normalized_href)
+    meta_text = format_file_meta(ext, size, storage)
+    anchor = soup.new_tag(
+        "a",
+        href=normalized_href,
+        **{"class": "css-uex5rt", "download": "", "target": "_blank"},
+    )
+    anchor.append(build_document_card_inner(soup, clean_document_card_label(label), ext, meta_text))
+    doc_wrap.append(anchor)
+    return anchor
+
+
+def normalize_section_document_blocks(soup: BeautifulSoup) -> bool:
+    changed = False
+    content = soup.select_one(".internal-article-content") or soup
+
+    for section in content.select(".css-sdnfq3[id]"):
+        h2 = section.find("h2", class_=lambda value: value and SECTION_H2_CLASS in value)
+        if h2 and ADDITIONAL_SOURCES_H2_RE.match(h2.get_text(strip=True)):
+            continue
+
+        docs_h4 = next(
+            (h4 for h4 in section.find_all("h4") if is_section_documents_h4_heading(h4)),
+            None,
+        )
+        doc_wrap = section.select_one(".mantine-1fv3ct")
+
+        known_keys: set[str] = set()
+        if doc_wrap:
+            for anchor in list(doc_wrap.select("a.css-uex5rt")):
+                href = anchor.get("href") or ""
+                key = document_href_key(href)
+                if key in known_keys:
+                    anchor.decompose()
+                    changed = True
+                    continue
+                known_keys.add(key)
+                normalized = normalize_document_href(href)
+                if normalized != href:
+                    anchor["href"] = normalized
+                    changed = True
+
+        pending: list[tuple[str, str]] = []
+        inline_labels: dict[str, str] = {}
+        for anchor in section.find_all("a", href=True):
+            if is_inside_document_card(anchor):
+                continue
+            href = anchor.get("href") or ""
+            if not is_document_href(href):
+                continue
+            key = document_href_key(href)
+            label = document_label_from_link(anchor.get_text(strip=True), href)
+            inline_labels[key] = label
+            if key in known_keys:
+                continue
+            pending.append((label, href))
+            known_keys.add(key)
+
+        if doc_wrap:
+            for anchor in doc_wrap.select("a.css-uex5rt"):
+                href = anchor.get("href") or ""
+                key = document_href_key(href)
+                label_el = anchor.select_one(
+                    f".{DOCUMENT_CARD_TITLE_CLASS}, .css-enb2gh"
+                )
+                if not label_el or key not in inline_labels:
+                    continue
+                desired = inline_labels[key]
+                current = label_el.get_text(strip=True)
+                if desired and current != desired and (
+                    len(desired) > len(current) or current.lower() in key
+                ):
+                    label_el.string = desired
+                    changed = True
+
+        if not pending:
+            continue
+
+        if not docs_h4:
+            docs_h4 = build_section_documents_h4(soup)
+            section.append(docs_h4)
+            changed = True
+
+        if not doc_wrap:
+            doc_wrap = soup.new_tag("div", attrs={"class": "mantine-1fv3ct"})
+            section.append(doc_wrap)
+            changed = True
+
+        for label, href in pending:
+            append_document_card(doc_wrap, soup, label, href)
+            changed = True
+
+    return changed
+
+
+INLINE_EXTERNAL_LINK_CLASS = "internal-article-external-link"
+INLINE_DOC_LINK_CLASS = "internal-article-doc-link"
+INLINE_VIEW_DOC_LINK_CLASS = "internal-article-view-doc-link"
+INLINE_ATTACH_ICON_CLASS = "internal-article-doc-link__icon"
+INLINE_EXTERNAL_LINK_ICON_CLASS = "internal-article-external-link__icon"
+
+
+def classify_inline_article_link(href: str) -> str | None:
+    if not href or href.startswith("#") or href.startswith("mailto:"):
+        return None
+    normalized = normalize_document_href(href)
+    host = urlparse(normalized).netloc.lower()
+    path = urlparse(normalized).path.lower()
+    if host.endswith("docs.google.com") and "/document/" in path:
+        return "view-doc"
+    if is_document_href(href):
+        return "download"
+    if href.startswith("http://") or href.startswith("https://"):
+        return "external"
+    return None
+
+
+def is_inside_additional_sources_section(anchor: Tag) -> bool:
+    section = anchor.find_parent(class_=lambda value: value and "css-sdnfq3" in (value or []))
+    if not section:
+        return False
+    h2 = section.find("h2", class_=lambda value: value and "internal-section-h2" in value)
+    if not h2:
+        return False
+    return bool(ADDITIONAL_SOURCES_H2_RE.match(h2.get_text(strip=True)))
+
+
+def should_skip_inline_link_decor(anchor: Tag) -> bool:
+    classes = anchor.get("class") or []
+    decorated = {
+        INLINE_EXTERNAL_LINK_CLASS,
+        INLINE_DOC_LINK_CLASS,
+        INLINE_VIEW_DOC_LINK_CLASS,
+    } & set(classes)
+    if decorated:
+        if (
+            INLINE_VIEW_DOC_LINK_CLASS in decorated
+            and is_inside_additional_sources_section(anchor)
+        ):
+            pass
+        else:
+            return True
+    if is_inside_document_card(anchor):
+        return True
+    if anchor.find_parent(class_=lambda value: value and "internal-article-legal-basis" in (value or [])):
+        return True
+    if anchor.find_parent(class_=lambda value: value and "internal-article-toc" in (value or [])):
+        return True
+    if anchor.find_parent(class_=lambda value: value and "internal-toc-dropdown" in (value or [])):
+        return True
+    if anchor.find_parent(class_=lambda value: value and "article-feedback-callout" in (value or [])):
+        return True
+    if "css-16clbz5" in classes or "css-1kb7s85" in classes:
+        return True
+    return False
+
+
+def extract_inline_link_text(anchor: Tag) -> str:
+    text = anchor.get_text(" ", strip=True)
+    for sr in anchor.select(".internal-article-link__sr-only, .internal-article-legal-basis__sr-only"):
+        text = text.replace(sr.get_text(strip=True), "").strip()
+    if anchor.select_one(".internal-article-view-doc-link__suffix"):
+        text = text.replace("відкрити документ", "").strip(" ·")
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def decorate_inline_link(anchor: Tag, soup: BeautifulSoup, link_type: str) -> bool:
+    href = anchor.get("href") or ""
+    text = extract_inline_link_text(anchor)
+    if not text:
+        return False
+
+    preserved_classes = [
+        cls
+        for cls in (anchor.get("class") or [])
+        if not cls.startswith("internal-article-")
+    ]
+    anchor.clear()
+
+    text_span = soup.new_tag("span")
+    text_span.string = text
+    sr = soup.new_tag("span", attrs={"class": "internal-article-link__sr-only"})
+
+    if link_type == "external":
+        anchor["class"] = [*preserved_classes, INLINE_EXTERNAL_LINK_CLASS]
+        anchor["target"] = "_blank"
+        anchor["rel"] = "noopener noreferrer"
+        text_span["class"] = "internal-article-external-link__text"
+        sr.string = " (відкривається в новій вкладці)"
+        anchor.append(text_span)
+        anchor.append(build_external_link_icon_tag(soup, INLINE_EXTERNAL_LINK_ICON_CLASS))
+        anchor.append(sr)
+        return True
+
+    if link_type == "download":
+        anchor["href"] = normalize_document_href(href)
+        anchor["class"] = [*preserved_classes, INLINE_DOC_LINK_CLASS]
+        anchor["target"] = "_blank"
+        anchor["download"] = ""
+        text_span["class"] = "internal-article-doc-link__text"
+        sr.string = " (завантажити документ)"
+        anchor.append(text_span)
+        icon = soup.new_tag(
+            "img",
+            src=INLINE_ATTACH_ICON,
+            alt="",
+            width=INLINE_ATTACH_ICON_SIZE,
+            height=INLINE_ATTACH_ICON_SIZE,
+            **{
+                "class": INLINE_ATTACH_ICON_CLASS,
+                "aria-hidden": "true",
+                "decoding": "async",
+                "loading": "lazy",
+            },
+        )
+        anchor.append(icon)
+        anchor.append(sr)
+        return True
+
+    if link_type == "view-doc":
+        anchor["class"] = [*preserved_classes, INLINE_VIEW_DOC_LINK_CLASS]
+        anchor["target"] = "_blank"
+        anchor["rel"] = "noopener noreferrer"
+        text_span["class"] = "internal-article-view-doc-link__text"
+        suffix = soup.new_tag("span", attrs={"class": "internal-article-view-doc-link__suffix"})
+        suffix.string = "відкрити документ"
+        sr.string = " (відкрити документ у новій вкладці)"
+        anchor.append(text_span)
+        anchor.append(suffix)
+        anchor.append(build_external_link_icon_tag(soup, INLINE_EXTERNAL_LINK_ICON_CLASS))
+        anchor.append(sr)
+        return True
+
+    return False
+
+
+def _external_link_icon_is_current(icon: Tag | None) -> bool:
+    if not icon:
+        return False
+    src = icon.get("src") or ""
+    return src == EXTERNAL_LINK_ARROW_ICON or src.endswith("/Arrow small 45.svg")
+
+
+def normalize_external_link_icons(soup: BeautifulSoup) -> bool:
+    changed = False
+    content = soup.select_one(".internal-article-content") or soup
+    targets = (
+        ("a.internal-article-external-link", INLINE_EXTERNAL_LINK_ICON_CLASS),
+        ("a.internal-article-view-doc-link", INLINE_EXTERNAL_LINK_ICON_CLASS),
+        ("a.internal-article-legal-basis__link", LEGAL_BASIS_ICON_CLASS),
+    )
+    for selector, icon_class in targets:
+        for anchor in content.select(selector):
+            for old_svg in anchor.select("svg"):
+                old_svg.decompose()
+                changed = True
+            icon = anchor.select_one(f"img.{icon_class}")
+            if _external_link_icon_is_current(icon) and icon.get("width") == EXTERNAL_LINK_ICON_SIZE:
+                continue
+            if icon:
+                icon["src"] = EXTERNAL_LINK_ARROW_ICON
+                icon["width"] = EXTERNAL_LINK_ICON_SIZE
+                icon["height"] = EXTERNAL_LINK_ICON_SIZE
+                changed = True
+                continue
+            sr = anchor.select_one(
+                ".internal-article-link__sr-only, .internal-article-legal-basis__sr-only"
+            )
+            new_icon = build_external_link_icon_tag(soup, icon_class)
+            if sr:
+                sr.insert_before(new_icon)
+            else:
+                anchor.append(new_icon)
+            changed = True
+    return changed
+
+
+def normalize_inline_doc_link_icons(soup: BeautifulSoup) -> bool:
+    changed = False
+    content = soup.select_one(".internal-article-content") or soup
+    for anchor in content.select("a.internal-article-doc-link"):
+        icon = anchor.select_one(f"img.{INLINE_ATTACH_ICON_CLASS}")
+        if (
+            icon
+            and icon.get("src") == INLINE_ATTACH_ICON
+            and icon.get("width") == INLINE_ATTACH_ICON_SIZE
+        ):
+            continue
+        if icon:
+            icon["src"] = INLINE_ATTACH_ICON
+            icon["width"] = INLINE_ATTACH_ICON_SIZE
+            icon["height"] = INLINE_ATTACH_ICON_SIZE
+            changed = True
+            continue
+        text_el = anchor.select_one(".internal-article-doc-link__text")
+        sr = anchor.select_one(".internal-article-link__sr-only")
+        new_icon = soup.new_tag(
+            "img",
+            src=INLINE_ATTACH_ICON,
+            alt="",
+            width=INLINE_ATTACH_ICON_SIZE,
+            height=INLINE_ATTACH_ICON_SIZE,
+            **{
+                "class": INLINE_ATTACH_ICON_CLASS,
+                "aria-hidden": "true",
+                "decoding": "async",
+                "loading": "lazy",
+            },
+        )
+        if sr:
+            sr.insert_before(new_icon)
+        elif text_el:
+            text_el.insert_after(new_icon)
+        else:
+            anchor.append(new_icon)
+        changed = True
+    return changed
+
+
+def normalize_inline_article_links(soup: BeautifulSoup) -> bool:
+    changed = False
+    content = soup.select_one(".internal-article-content") or soup
+    for anchor in content.find_all("a", href=True):
+        if should_skip_inline_link_decor(anchor):
+            continue
+        href = anchor.get("href") or ""
+        link_type = classify_inline_article_link(href)
+        if link_type == "view-doc" and is_inside_additional_sources_section(anchor):
+            link_type = "external"
+        if not link_type:
+            continue
+        if decorate_inline_link(anchor, soup, link_type):
+            changed = True
+    return changed
+
+
 def normalize_document_download_blocks(soup: BeautifulSoup) -> bool:
     changed = False
-    for img in soup.select('.internal-article-content a.css-uex5rt img[alt="file-icon"]'):
-        src = img.get("src") or ""
-        if DOCUMENT_DOWNLOAD_ICON not in src:
-            img["src"] = DOCUMENT_DOWNLOAD_ICON
+    for anchor in soup.select(".internal-article-content .mantine-1fv3ct a.css-uex5rt"):
+        href = anchor.get("href") or ""
+        normalized_href = normalize_document_href(href)
+        if normalized_href != href:
+            anchor["href"] = normalized_href
             changed = True
-        if img.get("width"):
-            del img["width"]
-            changed = True
-        if img.get("height"):
-            del img["height"]
-            changed = True
+
+        inner = anchor.select_one(".css-1h5x3dy, .mantine-1qq82n7")
+        if not inner:
+            continue
+
+        title_el = inner.select_one(f".{DOCUMENT_CARD_TITLE_CLASS}") or inner.select_one(
+            ".css-enb2gh"
+        )
+        label = clean_document_card_label(
+            title_el.get_text(strip=True) if title_el else "Документ"
+        )
+        ext, size, storage = resolve_file_metadata(normalized_href or href)
+        meta_text = format_file_meta(ext, size, storage)
+
+        has_new_layout = inner.select_one(f".{DOCUMENT_CARD_META_CLASS}") is not None
+        meta_el = inner.select_one(f".{DOCUMENT_CARD_META_CLASS}")
+        current_meta = meta_el.get_text(strip=True) if meta_el else ""
+        badge_el = inner.select_one(f".{DOCUMENT_CARD_BADGE_CLASS}")
+        current_badge = badge_el.get_text(strip=True) if badge_el else ""
+        current_title = title_el.get_text(strip=True) if title_el else ""
+
+        if (
+            has_new_layout
+            and DOCUMENT_CARD_CLASS in (inner.get("class") or [])
+            and current_meta == meta_text
+            and current_badge == badge_label(ext)
+            and current_title == label
+        ):
+            download_icon = inner.select_one('img[alt="file-icon"]')
+            if download_icon:
+                src = download_icon.get("src") or ""
+                if DOCUMENT_DOWNLOAD_ICON not in src:
+                    download_icon["src"] = DOCUMENT_DOWNLOAD_ICON
+                    changed = True
+                if download_icon.get("width"):
+                    del download_icon["width"]
+                    changed = True
+                if download_icon.get("height"):
+                    del download_icon["height"]
+                    changed = True
+            continue
+
+        anchor.clear()
+        anchor["class"] = "css-uex5rt"
+        anchor["download"] = ""
+        anchor["target"] = "_blank"
+        anchor.append(build_document_card_inner(soup, label, ext, meta_text))
+        changed = True
     return changed
 
 
@@ -2851,8 +4040,25 @@ def bake_page(html_path: Path, tree: dict, force: bool = False) -> bool:
             if content_host:
                 finalize_privacy_layout(content_host, soup)
         apply_heading_normalization(soup)
+        normalize_legal_basis_blocks(soup)
+        normalize_audience_switch(soup, path)
+        normalize_additional_sources_sections(soup)
+        normalize_section_document_blocks(soup)
+        normalize_section_documents_h4_headings(soup)
+        normalize_inline_article_links(soup)
+        normalize_external_link_icons(soup)
+        normalize_inline_doc_link_icons(soup)
         normalize_document_download_blocks(soup)
         repair_dash_bullet_lists(soup)
+        if content_host:
+            main_col = content_host.select_one(
+                ".internal-article-content .css-7nll2u, .css-7nll2u"
+            )
+            toc_wrap = content_host.select_one(".internal-article-toc")
+            if main_col and toc_wrap:
+                ensure_generated_toc(toc_wrap, main_col)
+                fix_toc_wrap(toc_wrap)
+                sync_baked_mobile_toc(content_host)
         set_html_ready(soup)
         html_path.write_text(
             linkify_email_addresses(normalize_typographic_quotes(str(soup))),
@@ -3041,8 +4247,26 @@ def bake_page(html_path: Path, tree: dict, force: bool = False) -> bool:
     main["data-internal-layout-baked"] = path
     main["data-internal-layout"] = path
     apply_heading_normalization(soup)
+    normalize_legal_basis_blocks(soup)
+    normalize_audience_switch(soup, path)
+    normalize_additional_sources_sections(soup)
+    normalize_section_document_blocks(soup)
+    normalize_section_documents_h4_headings(soup)
+    normalize_inline_article_links(soup)
+    normalize_external_link_icons(soup)
+    normalize_inline_doc_link_icons(soup)
     normalize_document_download_blocks(soup)
     repair_dash_bullet_lists(soup)
+    content_host = soup.select_one(".internal-main")
+    if content_host:
+        main_col = content_host.select_one(
+            ".internal-article-content .css-7nll2u, .css-7nll2u"
+        )
+        toc_wrap = content_host.select_one(".internal-article-toc")
+        if main_col and toc_wrap:
+            ensure_generated_toc(toc_wrap, main_col)
+            fix_toc_wrap(toc_wrap)
+            sync_baked_mobile_toc(content_host)
     set_html_ready(soup)
     html_path.write_text(
         linkify_email_addresses(normalize_typographic_quotes(str(soup))),
@@ -3079,6 +4303,7 @@ def main() -> None:
         else:
             skipped += 1
     print(f"Baked layout: {baked}, skipped: {skipped}")
+    persist_file_size_cache_if_needed()
 
 
 if __name__ == "__main__":

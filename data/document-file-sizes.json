@@ -1,0 +1,658 @@
+{
+  "https://cg.gov.ua/docs/1/2025/12/3734731.pdf": {
+    "ext": "PDF",
+    "size": null
+  },
+  "https://docs.google.com/document/d/1ceblra1rdbx1qaroerzvyiyxcnl9g3hd/edit": {
+    "ext": "FILE",
+    "size": null
+  },
+  "https://docs.google.com/document/d/1ndeomecqujkvzqrcapjvzzsf2u9a0083/edit": {
+    "ext": "FILE",
+    "size": null
+  },
+  "https://docs.google.com/document/d/1utt05rxta7ophaoaplpdkrshd9br_hka_qvdt90fimi/edit": {
+    "ext": "FILE",
+    "size": null
+  },
+  "https://drive.google.com/drive/folders/1bed91fglpdnxilq6rvbfbm8r9l0thnmg": {
+    "ext": "FILE",
+    "size": null
+  },
+  "https://drive.google.com/drive/folders/1dqp07drbrtvi1gdolsfctjqagarqxa2r": {
+    "ext": "FILE",
+    "size": null
+  },
+  "https://drive.google.com/drive/folders/1ge98vclnnrcxv-160upxw1a32oype_tb": {
+    "ext": "FILE",
+    "size": null
+  },
+  "https://drive.google.com/drive/folders/1lwpoafiailujnpzvupza-hvgfraoxwbn": {
+    "ext": "FILE",
+    "size": null
+  },
+  "https://drive.google.com/file/d/1-kybvnva3zt7pml15ikgvbll6of8qmud/view": {
+    "ext": "PDF",
+    "size": 588122,
+    "storage": "google-drive"
+  },
+  "https://drive.google.com/file/d/10x-aqd5g1-3xabusfkeotj_ck1clw1-5/view": {
+    "ext": "PDF",
+    "size": 1958560,
+    "storage": "google-drive"
+  },
+  "https://drive.google.com/file/d/11-kqyq33nwpvlzu0unais35xpu64hmkv/view": {
+    "ext": "PDF",
+    "size": 150413,
+    "storage": "google-drive"
+  },
+  "https://drive.google.com/file/d/11tmrz4f8tp2b6yzcd_zps5xdew33z_5l/view": {
+    "ext": "FILE",
+    "size": null,
+    "storage": "google-drive"
+  },
+  "https://drive.google.com/file/d/14asqx1yj2ae0ilv7yd7gks1kp2qudsrt/view": {
+    "ext": "PDF",
+    "size": 544214,
+    "storage": "google-drive"
+  },
+  "https://drive.google.com/file/d/1bdwci8mz13gp8wkahjnfqwal2_tm-scc/view": {
+    "ext": "PDF",
+    "size": 765788,
+    "storage": "google-drive"
+  },
+  "https://drive.google.com/file/d/1bs-v-ayz2ojyeahbjj3bx0vrklw-xozz/view": {
+    "ext": "PDF",
+    "size": 66827,
+    "storage": "google-drive"
+  },
+  "https://drive.google.com/file/d/1bsk8035cyuhttotb9xv8ftoz-jmdc6gr/view": {
+    "ext": "PDF",
+    "size": 226195,
+    "storage": "google-drive"
+  },
+  "https://drive.google.com/file/d/1humnfhaod-_dljargi4pxvx_azokl6pn/view": {
+    "ext": "PDF",
+    "size": 43702,
+    "storage": "google-drive"
+  },
+  "https://drive.google.com/file/d/1i58jfszjo--qc5omvrubp-mccgiabilw/view": {
+    "ext": "PDF",
+    "size": 234370,
+    "storage": "google-drive"
+  },
+  "https://drive.google.com/file/d/1liirtrxyjfzfnkkw-sbjsrnr6k2v_ax0/view": {
+    "ext": "PDF",
+    "size": 799750,
+    "storage": "google-drive"
+  },
+  "https://drive.google.com/file/d/1nahbmjx2p-acqjvvwkx8oaxjenkbg-gc/view": {
+    "ext": "FILE",
+    "size": null,
+    "storage": "google-drive"
+  },
+  "https://drive.google.com/file/d/1pue7zlr0nt7dry6jbn_0bmevbfguazdq/view": {
+    "ext": "PDF",
+    "size": 4314951,
+    "storage": "google-drive"
+  },
+  "https://drive.google.com/file/d/1rgwz25602wlbep0_ttkio5ttcsqbxy98/view": {
+    "ext": "PDF",
+    "size": 1550238,
+    "storage": "google-drive"
+  },
+  "https://drive.google.com/file/d/1ugu26c9jgrj0hkq1zxfcqesfgfgkrdvf/view": {
+    "ext": "PDF",
+    "size": 713601,
+    "storage": "google-drive"
+  },
+  "https://drive.google.com/file/d/1utssax7qsmzojs-1pw1rnotgu2kfeeiu/view": {
+    "ext": "PDF",
+    "size": 236197,
+    "storage": "google-drive"
+  },
+  "https://drive.google.com/file/d/1xtf3x7svafxmsr1p_yvxsvvv95c0junl/view": {
+    "ext": "PDF",
+    "size": 353235,
+    "storage": "google-drive"
+  },
+  "https://drive.google.com/file/d/1y9jtcujo4on13groq-xbz9vfecx4b-mt/view": {
+    "ext": "PDF",
+    "size": 563955,
+    "storage": "google-drive"
+  },
+  "https://drive.google.com/file/d/1yvhehpdde0cuda19daek8j78rnpib6yt/view": {
+    "ext": "PDF",
+    "size": 180577,
+    "storage": "google-drive"
+  },
+  "https://drive.google.com/file/d/1zrf_mccv7kzwo9ccw2wn4osf3gws_le1/view": {
+    "ext": "JPG",
+    "size": 136761,
+    "storage": "google-drive"
+  },
+  "https://i1.poltava.to/uploads/2025/12/26/turbota.pdf": {
+    "ext": "PDF",
+    "size": 376300
+  },
+  "https://kmr.gov.ua/sites/default/files/99-10566.pdf": {
+    "ext": "PDF",
+    "size": null
+  },
+  "https://kr-rada.gov.ua/uploads/documents/52399-880719786-rish_2943_18-12-2025.pdf": {
+    "ext": "PDF",
+    "size": 368008
+  },
+  "https://kr-rada.gov.ua/uploads/documents/53249-1036474188-rish_193_10-03-2026.pdf": {
+    "ext": "PDF",
+    "size": 200412
+  },
+  "https://miskrada-ks.gov.ua/wp-content/uploads/2025/10/812r-vid-13.10.2025-pro-vnesennia-zmin-do-prohramy-sotsialnoi-pidtrymky-veteraniv-ta-chleniv-simej-.pdf": {
+    "ext": "PDF",
+    "size": 3176393
+  },
+  "https://oblrada-kharkiv.gov.ua/wp-content/uploads/2024/03/zahysnyky_kodyficzyrovana-5.pdf": {
+    "ext": "PDF",
+    "size": 558150
+  },
+  "https://oblrada-pl.gov.ua/sites/default/files/field/docs/1074.pdf": {
+    "ext": "PDF",
+    "size": 696010
+  },
+  "https://oda.kr-admin.gov.ua/files/uploads/pdf/informatsiya-dlya-veteraniv/rozpor/1569-%d1%80.pdf": {
+    "ext": "PDF",
+    "size": 84101
+  },
+  "https://oda.zht.gov.ua/wp-content/uploads/2025/11/1241-vid-12.11.2025_compressed.pdf": {
+    "ext": "PDF",
+    "size": 8825026
+  },
+  "https://omr.gov.ua/files/2023/miska_rada/sesii/29-11/1635-viii.pdf": {
+    "ext": "PDF",
+    "size": 1934637
+  },
+  "https://rada-uzhgorod.gov.ua/media/2026/02/04/09-35-21_%d0%94%d0%be%d0%b4%d0%b0%d1%82%d0%be%d0%ba_1_%d0%9f%d1%80%d0%b5%d0%b7%d0%b5%d0%bd%d1%82%d0%b0%d1%86%d1%96%d1%8f_%d0%9f%d1%80%d0%be%d0%b3%d1%80%d0%b0%d0%bc%d0%b0_%d1%81%d0%be%d1%86.%d0%bf%d1%96%d0%b4%d1%82%d1%80%d0%b8%d0%bc%d0%ba%d0%b8_%d0%b2%d0%b5%d1%82%d0%b5%d1%80%d0%b0%d0%bd%d1%96%d0%b2.pdf": {
+    "ext": "PDF",
+    "size": 3018241
+  },
+  "https://rivnesoc.gov.ua/wp-content/uploads/2025/08/rishennya_%e2%84%964094_vid_23.11.2023.pdf": {
+    "ext": "PDF",
+    "size": 454852
+  },
+  "https://roadmap.koordshtab.gov.ua/documents/%d0%97%d0%b0%d1%8f%d0%b2%d0%b0_%d0%bf%d1%80%d0%be_%d0%b2%d1%81%d1%82%d0%b0%d0%bd%d0%be%d0%b2%d0%bb%d0%b5%d0%bd%d0%bd%d1%8f_%d1%84%d0%b0%d0%ba%d1%82%d1%83_%d0%b2%d1%96%d0%b8%d1%81%d1%8c%d0%ba%d0%be%d0%b2%d0%b0_%d0%be%d1%81%d0%be%d0%b1%d0%b0.pdf": {
+    "ext": "PDF",
+    "size": 81452
+  },
+  "https://shst.sm.gov.ua/images/docs/veteranu/2025/programi_2025/programa_zahisl_veteraniv.pdf": {
+    "ext": "PDF",
+    "size": 10626160
+  },
+  "https://storage.googleapis.com/b-legal-navigator/128_dodatok_2_c9a744cc77/128_dodatok_2_c9a744cc77.doc": {
+    "ext": "DOC",
+    "size": 108032
+  },
+  "https://storage.googleapis.com/b-legal-navigator/algoritm_prohodzhennya_msek_e61f4fdffd/algoritm_prohodzhennya_msek_e61f4fdffd.pdf": {
+    "ext": "PDF",
+    "size": 178287
+  },
+  "https://storage.googleapis.com/b-legal-navigator/chernigivska_oblasna_programa_9e72b7d269/chernigivska_oblasna_programa_9e72b7d269.pdf": {
+    "ext": "PDF",
+    "size": 3438685
+  },
+  "https://storage.googleapis.com/b-legal-navigator/cherniveczka_oblasna_programa_95def8478b/cherniveczka_oblasna_programa_95def8478b.pdf": {
+    "ext": "PDF",
+    "size": 234025
+  },
+  "https://storage.googleapis.com/b-legal-navigator/dodatok_18_raport_na_otrymannya_groshovoyi_dopomogy_na_odorovlennya_4aab18c831/dodatok_18_raport_na_otrymannya_groshovoyi_dopomogy_na_odorovlennya_4aab18c831.docx": {
+    "ext": "DOCX",
+    "size": 15659
+  },
+  "https://storage.googleapis.com/b-legal-navigator/dovidka_ngu_0ad0f26382/dovidka_ngu_0ad0f26382.jpg": {
+    "ext": "JPG",
+    "size": 68476
+  },
+  "https://storage.googleapis.com/b-legal-navigator/dovidka_pro_obstavini_travmi_d_0ab5e41c08/dovidka_pro_obstavini_travmi_d_0ab5e41c08.jpg": {
+    "ext": "JPG",
+    "size": 68476
+  },
+  "https://storage.googleapis.com/b-legal-navigator/epikriz_v_df89f9f380/epikriz_v_df89f9f380.jpg": {
+    "ext": "JPG",
+    "size": 95768
+  },
+  "https://storage.googleapis.com/b-legal-navigator/forma_pervinnoyi_oblikovoyi_dokumentacziyi_no_027_o_31badb6d7a/forma_pervinnoyi_oblikovoyi_dokumentacziyi_no_027_o_31badb6d7a.doc": {
+    "ext": "DOC",
+    "size": 94208
+  },
+  "https://storage.googleapis.com/b-legal-navigator/hvorobi_sechostatevoyi_sistemi_1_201c2a52af/hvorobi_sechostatevoyi_sistemi_1_201c2a52af.pdf": {
+    "ext": "PDF",
+    "size": 144413
+  },
+  "https://storage.googleapis.com/b-legal-navigator/infekczijni_hvorobi_shkiri_2f98d5fef2/infekczijni_hvorobi_shkiri_2f98d5fef2.pdf": {
+    "ext": "PDF",
+    "size": 147281
+  },
+  "https://storage.googleapis.com/b-legal-navigator/klopotannya_pro_ponovlennya_stroku_ekopfo_b02b9629cf/klopotannya_pro_ponovlennya_stroku_ekopfo_b02b9629cf.docx": {
+    "ext": "DOCX",
+    "size": 14159
+  },
+  "https://storage.googleapis.com/b-legal-navigator/klopotannya_pro_provedennya_ekspertizi_68a63f0221/klopotannya_pro_provedennya_ekspertizi_68a63f0221.docx": {
+    "ext": "DOCX",
+    "size": 51629
+  },
+  "https://storage.googleapis.com/b-legal-navigator/kontraktnyky_poloneni_b079fe7dc7/kontraktnyky_poloneni_b079fe7dc7.pdf": {
+    "ext": "PDF",
+    "size": 95707
+  },
+  "https://storage.googleapis.com/b-legal-navigator/misk_ter_hromada_print_1_2mm_de53f08ba8/misk_ter_hromada_print_1_2mm_de53f08ba8.pdf": {
+    "ext": "PDF",
+    "size": 2193723
+  },
+  "https://storage.googleapis.com/b-legal-navigator/miska_hromada_preview_4a78bae9c3/miska_hromada_preview_4a78bae9c3.pdf": {
+    "ext": "PDF",
+    "size": 552053
+  },
+  "https://storage.googleapis.com/b-legal-navigator/misto_print_2_2mm_94b58a907b/misto_print_2_2mm_94b58a907b.pdf": {
+    "ext": "PDF",
+    "size": 2366580
+  },
+  "https://storage.googleapis.com/b-legal-navigator/mobilizovani_poloneni_1671bcec06/mobilizovani_poloneni_1671bcec06.pdf": {
+    "ext": "PDF",
+    "size": 84667
+  },
+  "https://storage.googleapis.com/b-legal-navigator/naslidki_ch_mt_ta_porushennya_sluhu_69480aa976/naslidki_ch_mt_ta_porushennya_sluhu_69480aa976.pdf": {
+    "ext": "PDF",
+    "size": 169664
+  },
+  "https://storage.googleapis.com/b-legal-navigator/nevikoristana_vidpustka_58d760ecf1/nevikoristana_vidpustka_58d760ecf1.docx": {
+    "ext": "DOCX",
+    "size": 32056
+  },
+  "https://storage.googleapis.com/b-legal-navigator/obl_centr_preview_475dc66cb8/obl_centr_preview_475dc66cb8.pdf": {
+    "ext": "PDF",
+    "size": 555802
+  },
+  "https://storage.googleapis.com/b-legal-navigator/onkologichni_zahvoryuvannya_09eba9cd08/onkologichni_zahvoryuvannya_09eba9cd08.pdf": {
+    "ext": "PDF",
+    "size": 229845
+  },
+  "https://storage.googleapis.com/b-legal-navigator/osobiste_rozporyadzhennya_c272d08b9d/osobiste_rozporyadzhennya_c272d08b9d.png": {
+    "ext": "PNG",
+    "size": 102667
+  },
+  "https://storage.googleapis.com/b-legal-navigator/osobyzinavalidnist_kontrakt_9e4ee66aa7/osobyzinavalidnist_kontrakt_9e4ee66aa7.pdf": {
+    "ext": "PDF",
+    "size": 86149
+  },
+  "https://storage.googleapis.com/b-legal-navigator/pervinna_medichna_kartka_43ed6d3bed/pervinna_medichna_kartka_43ed6d3bed.jpg": {
+    "ext": "JPG",
+    "size": 256490
+  },
+  "https://storage.googleapis.com/b-legal-navigator/photo_2023_12_18_09_29_38_e99cef5290/photo_2023_12_18_09_29_38_e99cef5290.pdf": {
+    "ext": "PDF",
+    "size": 113080
+  },
+  "https://storage.googleapis.com/b-legal-navigator/pmk_ce011a9183/pmk_ce011a9183.pdf": {
+    "ext": "PDF",
+    "size": 112925
+  },
+  "https://storage.googleapis.com/b-legal-navigator/pmk_dlya_druku_7e213bba04/pmk_dlya_druku_7e213bba04.pdf": {
+    "ext": "PDF",
+    "size": 112925
+  },
+  "https://storage.googleapis.com/b-legal-navigator/porushennya_abo_vtrata_zoru_7cb66f305b/porushennya_abo_vtrata_zoru_7cb66f305b.pdf": {
+    "ext": "PDF",
+    "size": 164804
+  },
+  "https://storage.googleapis.com/b-legal-navigator/porushennya_roboti_oporno_ruhovogo_aparatu_8734c27b4f/porushennya_roboti_oporno_ruhovogo_aparatu_8734c27b4f.pdf": {
+    "ext": "PDF",
+    "size": 304229
+  },
+  "https://storage.googleapis.com/b-legal-navigator/postanova_vlk_v_3dbfed3069/postanova_vlk_v_3dbfed3069.jpg": {
+    "ext": "JPG",
+    "size": 90351
+  },
+  "https://storage.googleapis.com/b-legal-navigator/priklad_dovidki_dlya_dpsu_39fd5974bf/priklad_dovidki_dlya_dpsu_39fd5974bf.docx": {
+    "ext": "DOCX",
+    "size": 18873
+  },
+  "https://storage.googleapis.com/b-legal-navigator/programa_docx_aa811cf3bf/programa_docx_aa811cf3bf.pdf": {
+    "ext": "PDF",
+    "size": 178142
+  },
+  "https://storage.googleapis.com/b-legal-navigator/psihologichna_dopomoga_4c75720a27/psihologichna_dopomoga_4c75720a27.pdf": {
+    "ext": "PDF",
+    "size": 190971
+  },
+  "https://storage.googleapis.com/b-legal-navigator/psihologichna_dopomoga_narkotichni_zalezhnosti_910712d0c8/psihologichna_dopomoga_narkotichni_zalezhnosti_910712d0c8.pdf": {
+    "ext": "PDF",
+    "size": 18091
+  },
+  "https://storage.googleapis.com/b-legal-navigator/raport_matdopomoga_1_1_bdcf08f560/raport_matdopomoga_1_1_bdcf08f560.pdf": {
+    "ext": "PDF",
+    "size": 121309
+  },
+  "https://storage.googleapis.com/b-legal-navigator/raport_matdopomoga_1_5886fc0418/raport_matdopomoga_1_5886fc0418.pdf": {
+    "ext": "PDF",
+    "size": 120687
+  },
+  "https://storage.googleapis.com/b-legal-navigator/raport_na_1_mln_kopiya_3f22c1a847/raport_na_1_mln_kopiya_3f22c1a847.docx": {
+    "ext": "DOCX",
+    "size": 15009
+  },
+  "https://storage.googleapis.com/b-legal-navigator/raport_na_im_ya_komandira_vijskovoyi_chastini_z_prohannyam_vidati_napravlennya_na_msek_d_a3afd2d66d/raport_na_im_ya_komandira_vijskovoyi_chastini_z_prohannyam_vidati_napravlennya_na_msek_d_a3afd2d66d.docx": {
+    "ext": "DOCX",
+    "size": 14032
+  },
+  "https://storage.googleapis.com/b-legal-navigator/raport_na_otrimannya_dodatkovoi_groshovoi_vinagorodi_v_1_52256c3427/raport_na_otrimannya_dodatkovoi_groshovoi_vinagorodi_v_1_52256c3427.pdf": {
+    "ext": "PDF",
+    "size": 197853
+  },
+  "https://storage.googleapis.com/b-legal-navigator/raport_na_otrimannya_dodatkovoi_groshovoi_vinagorodi_v_1eea98f1f3/raport_na_otrimannya_dodatkovoi_groshovoi_vinagorodi_v_1eea98f1f3.pdf": {
+    "ext": "PDF",
+    "size": 76244
+  },
+  "https://storage.googleapis.com/b-legal-navigator/raport_na_otrimannya_materialnoyi_dopomogi_d_ff94bf2604/raport_na_otrimannya_materialnoyi_dopomogi_d_ff94bf2604.docx": {
+    "ext": "DOCX",
+    "size": 22885
+  },
+  "https://storage.googleapis.com/b-legal-navigator/raport_na_zvilnennya_u_razi_zagibeli_rodicha_a0c4fe29d5/raport_na_zvilnennya_u_razi_zagibeli_rodicha_a0c4fe29d5.docx": {
+    "ext": "DOCX",
+    "size": 9362
+  },
+  "https://storage.googleapis.com/b-legal-navigator/raport_otrimannya_napravlennya_na_vlk_za_misczem_likuvannya_ce73c18868/raport_otrimannya_napravlennya_na_vlk_za_misczem_likuvannya_ce73c18868.pdf": {
+    "ext": "PDF",
+    "size": 172808
+  },
+  "https://storage.googleapis.com/b-legal-navigator/raport_ozdorovlennya_c89979ad47/raport_ozdorovlennya_c89979ad47.pdf": {
+    "ext": "PDF",
+    "size": 94524
+  },
+  "https://storage.googleapis.com/b-legal-navigator/raport_peremishhennya_osobiste_prohannya_9fd131ccf5/raport_peremishhennya_osobiste_prohannya_9fd131ccf5.pdf": {
+    "ext": "PDF",
+    "size": 151576
+  },
+  "https://storage.googleapis.com/b-legal-navigator/raport_peremishhennya_za_stanom_zdorov_ya_shablon_008b918b3e/raport_peremishhennya_za_stanom_zdorov_ya_shablon_008b918b3e.pdf": {
+    "ext": "PDF",
+    "size": 162045
+  },
+  "https://storage.googleapis.com/b-legal-navigator/raport_pro_nadannya_vidpustki_za_stanom_zdorov_ya_do_30_dniv_d_357c4a11e3/raport_pro_nadannya_vidpustki_za_stanom_zdorov_ya_do_30_dniv_d_357c4a11e3.docx": {
+    "ext": "DOCX",
+    "size": 8035
+  },
+  "https://storage.googleapis.com/b-legal-navigator/raport_pro_otrimannya_dovidki_pro_obstavini_poranennya_d_3a2d4fb41d/raport_pro_otrimannya_dovidki_pro_obstavini_poranennya_d_3a2d4fb41d.docx": {
+    "ext": "DOCX",
+    "size": 7894
+  },
+  "https://storage.googleapis.com/b-legal-navigator/raport_pro_otrimannya_dovidki_pro_obstavini_poranennya_d_f6fa9ddbdd/raport_pro_otrimannya_dovidki_pro_obstavini_poranennya_d_f6fa9ddbdd.docx": {
+    "ext": "DOCX",
+    "size": 7894
+  },
+  "https://storage.googleapis.com/b-legal-navigator/raport_pro_otrimannya_napravlennya_na_likuvannya_d_b589029bd8/raport_pro_otrimannya_napravlennya_na_likuvannya_d_b589029bd8.pdf": {
+    "ext": "PDF",
+    "size": 217549
+  },
+  "https://storage.googleapis.com/b-legal-navigator/raport_pro_otrimannya_napravlennya_na_vlk_d_524546ed37/raport_pro_otrimannya_napravlennya_na_vlk_d_524546ed37.docx": {
+    "ext": "DOCX",
+    "size": 7734
+  },
+  "https://storage.googleapis.com/b-legal-navigator/raport_pro_otrimannya_napravlennya_na_vlk_za_misczem_likuvannya_d_9a1e138c9b/raport_pro_otrimannya_napravlennya_na_vlk_za_misczem_likuvannya_d_9a1e138c9b.pdf": {
+    "ext": "PDF",
+    "size": 172808
+  },
+  "https://storage.googleapis.com/b-legal-navigator/raport_vidpustka_za_simejnimi_obstavinami_odruzhennya_1fc42479e3/raport_vidpustka_za_simejnimi_obstavinami_odruzhennya_1fc42479e3.pdf": {
+    "ext": "PDF",
+    "size": 107450
+  },
+  "https://storage.googleapis.com/b-legal-navigator/raport_zvilnennya_z_vijskovoyi_sluzhbi_mobilizovanij_osoba_z_invalidnistyu_66170eb059/raport_zvilnennya_z_vijskovoyi_sluzhbi_mobilizovanij_osoba_z_invalidnistyu_66170eb059.docx": {
+    "ext": "DOCX",
+    "size": 11297
+  },
+  "https://storage.googleapis.com/b-legal-navigator/reproduktivni_problemi_2f4f8e6cc6/reproduktivni_problemi_2f4f8e6cc6.pdf": {
+    "ext": "PDF",
+    "size": 136906
+  },
+  "https://storage.googleapis.com/b-legal-navigator/sil_sel_hromada_print_1_2mm_2fa7527b06/sil_sel_hromada_print_1_2mm_2fa7527b06.pdf": {
+    "ext": "PDF",
+    "size": 3413268
+  },
+  "https://storage.googleapis.com/b-legal-navigator/silsk_sel_hromada_preview_d634ea76b3/silsk_sel_hromada_preview_d634ea76b3.pdf": {
+    "ext": "PDF",
+    "size": 526770
+  },
+  "https://storage.googleapis.com/b-legal-navigator/skarga_na_bezdiyalnist_komandira_vijskovoyi_chastini_d_1e3e196db1/skarga_na_bezdiyalnist_komandira_vijskovoyi_chastini_d_1e3e196db1.docx": {
+    "ext": "DOCX",
+    "size": 9034
+  },
+  "https://storage.googleapis.com/b-legal-navigator/starost_hromada_preview_c8e49b6844/starost_hromada_preview_c8e49b6844.pdf": {
+    "ext": "PDF",
+    "size": 540556
+  },
+  "https://storage.googleapis.com/b-legal-navigator/starost_okrug_print_1_2mm_00fc86b5d2/starost_okrug_print_1_2mm_00fc86b5d2.pdf": {
+    "ext": "PDF",
+    "size": 3037730
+  },
+  "https://storage.googleapis.com/b-legal-navigator/sumska_miska_programa_07a09c6004/sumska_miska_programa_07a09c6004.docx": {
+    "ext": "DOCX",
+    "size": 30237
+  },
+  "https://storage.googleapis.com/b-legal-navigator/tuberkuloz_9d29ea0161/tuberkuloz_9d29ea0161.pdf": {
+    "ext": "PDF",
+    "size": 181260
+  },
+  "https://storage.googleapis.com/b-legal-navigator/vil_gepatiti_ta_inshi_infekczijni_zahvoryuvannya_baf8649ce4/vil_gepatiti_ta_inshi_infekczijni_zahvoryuvannya_baf8649ce4.pdf": {
+    "ext": "PDF",
+    "size": 167785
+  },
+  "https://storage.googleapis.com/b-legal-navigator/visnovok_pro_napravlennya_na_likuvannya_za_kordon_vijskovim_5b2e07f1f8/visnovok_pro_napravlennya_na_likuvannya_za_kordon_vijskovim_5b2e07f1f8.docx": {
+    "ext": "DOCX",
+    "size": 15393
+  },
+  "https://storage.googleapis.com/b-legal-navigator/za_nevikoristane_majno_2942a065cd/za_nevikoristane_majno_2942a065cd.docx": {
+    "ext": "DOCX",
+    "size": 32094
+  },
+  "https://storage.googleapis.com/b-legal-navigator/zagalna_infomacziya_pro_medichnu_dopomogu_4dc85a6324/zagalna_infomacziya_pro_medichnu_dopomogu_4dc85a6324.pdf": {
+    "ext": "PDF",
+    "size": 195808
+  },
+  "https://storage.googleapis.com/b-legal-navigator/zahvoryuvannya_serczevo_sudinnoyi_sistemi_6c096517a3/zahvoryuvannya_serczevo_sudinnoyi_sistemi_6c096517a3.pdf": {
+    "ext": "PDF",
+    "size": 166247
+  },
+  "https://storage.googleapis.com/b-legal-navigator/zahvoryuvannya_shlunkovo_kishkovogo_traktu_f8ad61a1e9/zahvoryuvannya_shlunkovo_kishkovogo_traktu_f8ad61a1e9.pdf": {
+    "ext": "PDF",
+    "size": 141272
+  },
+  "https://storage.googleapis.com/b-legal-navigator/zapalni_hvorobi_cz_ns_54f6542245/zapalni_hvorobi_cz_ns_54f6542245.pdf": {
+    "ext": "PDF",
+    "size": 133548
+  },
+  "https://storage.googleapis.com/b-legal-navigator/zayava_chleniv_sim_yi_na_pererahunok_gz_polonenogobezvisti_zniklogo_d_8b36a229c4/zayava_chleniv_sim_yi_na_pererahunok_gz_polonenogobezvisti_zniklogo_d_8b36a229c4.docx": {
+    "ext": "DOCX",
+    "size": 8160
+  },
+  "https://storage.googleapis.com/b-legal-navigator/zayava_na_omd_kiyiv_a5148d411c/zayava_na_omd_kiyiv_a5148d411c.docx": {
+    "ext": "DOCX",
+    "size": 13431
+  },
+  "https://storage.googleapis.com/b-legal-navigator/zayava_na_perevedennya_do_inshogo_medzakladu_d_442e272b16/zayava_na_perevedennya_do_inshogo_medzakladu_d_442e272b16.docx": {
+    "ext": "DOCX",
+    "size": 18293
+  },
+  "https://storage.googleapis.com/b-legal-navigator/zayava_pro_viplatu_odnorazovoyi_groshovoyi_dopomogi_cherez_t_cz_k_d_a56b36d24d/zayava_pro_viplatu_odnorazovoyi_groshovoyi_dopomogi_cherez_t_cz_k_d_a56b36d24d.docx": {
+    "ext": "DOCX",
+    "size": 8721
+  },
+  "https://storage.googleapis.com/b-legal-navigator/zayava_pro_viplatu_odnorazovoyi_groshovoyi_dopomogi_d_c14b47c0ef/zayava_pro_viplatu_odnorazovoyi_groshovoyi_dopomogi_d_c14b47c0ef.docx": {
+    "ext": "DOCX",
+    "size": 8615
+  },
+  "https://storage.googleapis.com/b-legal-navigator/zayava_pro_viplatu_ogd_d_715c5e8d31/zayava_pro_viplatu_ogd_d_715c5e8d31.docx": {
+    "ext": "DOCX",
+    "size": 8615
+  },
+  "https://storage.googleapis.com/b-legal-navigator/zayavi_do_t_cz_k_sp_z_prohannyam_vidachi_napravlennya_na_msek_d_35068f3bd8/zayavi_do_t_cz_k_sp_z_prohannyam_vidachi_napravlennya_na_msek_d_35068f3bd8.docx": {
+    "ext": "DOCX",
+    "size": 10185
+  },
+  "https://storage.googleapis.com/b-legal-navigator/zdacha_posady_ccae92aa6d/zdacha_posady_ccae92aa6d.pdf": {
+    "ext": "PDF",
+    "size": 78182
+  },
+  "https://storage.googleapis.com/b-legal-navigator/zgoda_na_peredachu_medichnoyi_informacziyi_70c99e5ab3/zgoda_na_peredachu_medichnoyi_informacziyi_70c99e5ab3.docx": {
+    "ext": "DOCX",
+    "size": 15364
+  },
+  "https://storage.googleapis.com/b-legal-navigator/zgoda_pacziyenta_na_likuvannya_za_kordonom_5eb62b438a/zgoda_pacziyenta_na_likuvannya_za_kordonom_5eb62b438a.docx": {
+    "ext": "DOCX",
+    "size": 9330
+  },
+  "https://storage.googleapis.com/b-legal-navigator/zrazok_raport_likuvannya_operacziya_forma_dlya_zapovnennya_v3_17866878a1/zrazok_raport_likuvannya_operacziya_forma_dlya_zapovnennya_v3_17866878a1.docx": {
+    "ext": "DOCX",
+    "size": 32835
+  },
+  "https://storage.googleapis.com/b-legal-navigator/zrazok_raport_likuvannya_staczionar_forma_dlya_zapovnennya_v3_129d82662a/zrazok_raport_likuvannya_staczionar_forma_dlya_zapovnennya_v3_129d82662a.docx": {
+    "ext": "DOCX",
+    "size": 33067
+  },
+  "https://storage.googleapis.com/b-legal-navigator/zrazok_raport_na_shhorichnu_vidpustku_forma_dlya_zapovnennya_v5_35855b66fa/zrazok_raport_na_shhorichnu_vidpustku_forma_dlya_zapovnennya_v5_35855b66fa.pdf": {
+    "ext": "PDF",
+    "size": 132100
+  },
+  "https://storage.googleapis.com/b-legal-navigator/zrazok_raport_na_viplatu_za_pidpisannya_pershogo_kontraktu_blank_v1_35276f56d4/zrazok_raport_na_viplatu_za_pidpisannya_pershogo_kontraktu_blank_v1_35276f56d4.pdf": {
+    "ext": "PDF",
+    "size": 367749
+  },
+  "https://storage.googleapis.com/b-legal-navigator/zrazok_raport_pro_otrymannya_napravlennya_na_likuvannya_forma_dlya_zapovnennya_v3_c0abaf1fe1/zrazok_raport_pro_otrymannya_napravlennya_na_likuvannya_forma_dlya_zapovnennya_v3_c0abaf1fe1.docx": {
+    "ext": "DOCX",
+    "size": 36514
+  },
+  "https://storage.googleapis.com/b-legal-navigator/zrazok_vlk_441a072996/zrazok_vlk_441a072996.docx": {
+    "ext": "DOCX",
+    "size": 33509
+  },
+  "https://storage.googleapis.com/b-legal-navigator/zrazok_zayavi_pro_viplatu_odnorazovoyi_groshovoyi_dopomogi_v_85dabf9768/zrazok_zayavi_pro_viplatu_odnorazovoyi_groshovoyi_dopomogi_v_85dabf9768.pdf": {
+    "ext": "PDF",
+    "size": 75257
+  },
+  "https://storage.googleapis.com/b-legal-navigator/zvilnennya_kontrakt_2457d7a9c5/zvilnennya_kontrakt_2457d7a9c5.docx": {
+    "ext": "DOCX",
+    "size": 14873
+  },
+  "https://storage.googleapis.com/b-legal-navigator/zvilnennya_mobilizovani_139ba676ea/zvilnennya_mobilizovani_139ba676ea.docx": {
+    "ext": "DOCX",
+    "size": 15001
+  },
+  "https://ternopilcity.gov.ua/app12/8-45-20-12-03-26.pdf": {
+    "ext": "PDF",
+    "size": 254896
+  },
+  "https://turbota.mil.gov.ua/dopomoga-dilovodam/instrukcziya-40/dodatok-28-do-instrukcziyi-z-dilovodstva-u-zbrojnyh-sylah-ukrayiny-punkt-2-8-8-3": {
+    "ext": "FILE",
+    "size": null
+  },
+  "https://turbota.mil.gov.ua/dopomoga-dilovodam/instrukcziya-40/dodatok-30-do-instrukcziyi-z-dilovodstva-u-zbrojnyh-sylah-ukrayiny-pidpunkt-2-8-9": {
+    "ext": "FILE",
+    "size": null
+  },
+  "https://turbota.mil.gov.ua/raporty/forma-5": {
+    "ext": "FILE",
+    "size": null
+  },
+  "https://turbota.mil.gov.ua/wp-content/uploads/2023/04/dodatok-11.-zrazok-napravlennya-na-vlk.docx": {
+    "ext": "DOCX",
+    "size": 13474
+  },
+  "https://turbota.mil.gov.ua/wp-content/uploads/2024/03/dodatok-15.-raport-dlya-otrymannya-napravlennya-na-prohodzhennya-opf.docx": {
+    "ext": "DOCX",
+    "size": 23239
+  },
+  "https://turbota.mil.gov.ua/wp-content/uploads/2024/03/zrazok-raport-kompensacziya-za-nevykorystani-dni-shhorichnoyi-osnovnoyi-vidpustky-blank-v3.pdf": {
+    "ext": "PDF",
+    "size": 55469
+  },
+  "https://turbota.mil.gov.ua/wp-content/uploads/2024/05/akt-pryjomu-peredachi.docx": {
+    "ext": "DOCX",
+    "size": 55439
+  },
+  "https://turbota.mil.gov.ua/wp-content/uploads/2024/06/zgoda-na-obrobku-danyh-dlya-nadannya-statusu-ubd.pdf": {
+    "ext": "PDF",
+    "size": 130367
+  },
+  "https://turbota.mil.gov.ua/zrazky-documentiv": {
+    "ext": "FILE",
+    "size": null
+  },
+  "https://www.adm-km.gov.ua/doc/orders/2026/03/017n_040326.pdf": {
+    "ext": "PDF",
+    "size": 84634
+  },
+  "https://www.adm-km.gov.ua/doc/orders/2026/03/017n_040326_1.pdf": {
+    "ext": "PDF",
+    "size": 176615
+  },
+  "https://zakon.rada.gov.ua/laws/file/text/105/f224844n240.docx": {
+    "ext": "DOCX",
+    "size": 22638
+  },
+  "https://zakon.rada.gov.ua/laws/file/text/108/f277457n5737.docx": {
+    "ext": "DOCX",
+    "size": 13474
+  },
+  "https://zakon.rada.gov.ua/laws/file/text/108/f277457n5738.docx": {
+    "ext": "DOCX",
+    "size": 14355
+  },
+  "https://zakon.rada.gov.ua/laws/file/text/108/f430846n224.docx": {
+    "ext": "DOCX",
+    "size": 20798
+  },
+  "https://zakon.rada.gov.ua/laws/file/text/116/f535481n124.docx": {
+    "ext": "DOCX",
+    "size": 23011
+  },
+  "https://zakon.rada.gov.ua/laws/file/text/118/f430846n388.docx": {
+    "ext": "DOCX",
+    "size": 24620
+  },
+  "https://zakon.rada.gov.ua/laws/file/text/122/f521400n2423.docx": {
+    "ext": "DOCX",
+    "size": 25704
+  },
+  "https://zakon.rada.gov.ua/laws/file/text/124/f277457n7748.docx": {
+    "ext": "DOCX",
+    "size": 19138
+  },
+  "https://zakon.rada.gov.ua/laws/file/text/126/f277457n7802.docx": {
+    "ext": "DOCX",
+    "size": 15392
+  },
+  "https://zakon.rada.gov.ua/laws/file/text/126/f277457n7803.docx": {
+    "ext": "DOCX",
+    "size": 19397
+  },
+  "https://zakon.rada.gov.ua/laws/file/text/128/f291032n8096.docx": {
+    "ext": "DOCX",
+    "size": 18408
+  },
+  "https://zakon.rada.gov.ua/laws/file/text/128/f291032n8097.docx": {
+    "ext": "DOCX",
+    "size": 19763
+  },
+  "https://zakon.rada.gov.ua/laws/file/text/129/f548183n122.docx": {
+    "ext": "DOCX",
+    "size": 15497
+  },
+  "https://zakon.rada.gov.ua/laws/file/text/41/f180745n671.doc": {
+    "ext": "DOC",
+    "size": 38400
+  },
+  "https://zakon.rada.gov.ua/laws/file/text/43/f454158n27.doc": {
+    "ext": "DOC",
+    "size": 33280
+  },
+  "https://zt-rada.gov.ua/files/upload/sitefiles/doc1735570953.pdf": {
+    "ext": "PDF",
+    "size": 2727865
+  }
+}

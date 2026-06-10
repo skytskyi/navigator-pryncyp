@@ -93,15 +93,18 @@
 
   function calloutHtml() {
     return (
-      '<div class="article-feedback-callout" data-article-feedback-callout>' +
+      '<aside class="article-feedback-callout" data-article-feedback-callout aria-label="Зворотний зв\'язок">' +
+      '<div class="article-feedback-callout__inner">' +
+      '<div class="article-feedback-callout__content">' +
+      '<p class="article-feedback-callout__eyebrow">Допоможіть покращити статтю</p>' +
       '<p class="article-feedback-callout__lead"><strong>Ви знайшли помилку чи неточність?</strong></p>' +
       '<p class="article-feedback-callout__hint">' +
       "Якщо помилка в тексті, виділіть її мишкою і натисніть Ctrl + Enter." +
-      "</p>" +
-      '<p class="article-feedback-callout__action">' +
-      '<button type="button" class="article-feedback-callout__link" data-article-feedback-open>' +
-      "Залиште нам відгук" +
-      "</button></p></div>"
+      "</p></div>" +
+      '<div class="article-feedback-callout__actions">' +
+      '<button type="button" class="article-feedback-callout__button" data-article-feedback-open>' +
+      "Залишити відгук" +
+      "</button></div></div></aside>"
     );
   }
 

@@ -210,8 +210,9 @@
   function mobileTocToggleMarkup() {
     return (
       '<div class="internal-toc-toggle-wrap">' +
-      '<button type="button" class="internal-toc-toggle" aria-label="Зміст сторінки" aria-expanded="false">' +
-      '<img src="/img/toc.svg" alt="" width="12" height="12" aria-hidden="true" />' +
+      '<button type="button" class="internal-toc-toggle" aria-label="Зміст" aria-expanded="false">' +
+      '<img class="internal-toc-toggle__icon" src="/img/toc_icon.svg" alt="" width="16" height="16" aria-hidden="true" />' +
+      '<span class="internal-toc-toggle__label">Зміст</span>' +
       "</button>" +
       '<div class="internal-toc-dropdown" hidden>' +
       '<div class="internal-toc-dropdown__panel">' +
@@ -734,6 +735,8 @@
     if (tocScope) {
       expandArticleAccordions(tocScope);
       fixArticleTocScroll(tocScope);
+      bindArticleTocNavigation(tocScope);
+      bindArticleFigureLightbox(tocScope);
       if (tocScope.querySelector(".internal-article-toc .mantine-List-item")) {
         bindArticleTocSpy(tocScope);
       }
@@ -2219,22 +2222,20 @@
       }
 
       var legacy = container.querySelector(".mantine-16hexn0");
-      var docCount = 0;
       if (legacy) {
-        docCount = parseLegacyTocDocCount(legacy);
         legacy.remove();
         changed = true;
-      } else if (container.querySelector(".internal-toc-doc-badge__text")) {
-        return;
       }
 
-      if (!docCount && mainCol) {
+      var docCount = 0;
+      if (mainCol) {
         var sectionId = getTocHashId(link.getAttribute("href"));
         var section = findSectionById(mainCol, sectionId);
         if (section) {
           var actualId = section.getAttribute("id");
           if (actualId && actualId !== sectionId) {
             link.setAttribute("href", "#" + actualId);
+            changed = true;
           }
           docCount = countSectionDownloads(section);
         }
@@ -2446,6 +2447,150 @@
       .trim();
     var parsed = parseInt(raw, 10);
     return Number.isFinite(parsed) ? parsed + 8 : 168;
+  }
+
+  function scrollToTocSection(section) {
+    if (!section) {
+      return;
+    }
+
+    var offset = getScrollSpyOffset();
+    var top = section.getBoundingClientRect().top + window.pageYOffset - offset;
+    window.scrollTo({
+      top: Math.max(0, top),
+      behavior: "smooth",
+    });
+  }
+
+  var figureLightboxEl = null;
+  var figureLightboxEscapeHandler = null;
+  var figureLightboxPreviousOverflow = "";
+
+  function ensureFigureLightbox() {
+    if (figureLightboxEl) {
+      return figureLightboxEl;
+    }
+
+    figureLightboxEl = document.createElement("div");
+    figureLightboxEl.className = "internal-figure-lightbox";
+    figureLightboxEl.hidden = true;
+    figureLightboxEl.setAttribute("role", "dialog");
+    figureLightboxEl.setAttribute("aria-modal", "true");
+    figureLightboxEl.setAttribute("aria-label", "Перегляд зображення");
+    figureLightboxEl.innerHTML =
+      '<button type="button" class="internal-figure-lightbox__close" aria-label="Закрити">×</button>' +
+      '<div class="internal-figure-lightbox__backdrop" aria-hidden="true"></div>' +
+      '<img class="internal-figure-lightbox__image" alt="" decoding="async" />';
+
+    var closeButton = figureLightboxEl.querySelector(".internal-figure-lightbox__close");
+    closeButton.addEventListener("click", function (event) {
+      event.preventDefault();
+      closeFigureLightbox();
+    });
+
+    document.body.appendChild(figureLightboxEl);
+    return figureLightboxEl;
+  }
+
+  function closeFigureLightbox() {
+    if (!figureLightboxEl || figureLightboxEl.hidden) {
+      return;
+    }
+
+    figureLightboxEl.hidden = true;
+    document.body.style.overflow = figureLightboxPreviousOverflow;
+    if (figureLightboxEscapeHandler) {
+      document.removeEventListener("keydown", figureLightboxEscapeHandler);
+      figureLightboxEscapeHandler = null;
+    }
+  }
+
+  function openFigureLightbox(src, alt) {
+    if (!src) {
+      return;
+    }
+
+    var lightbox = ensureFigureLightbox();
+    var image = lightbox.querySelector(".internal-figure-lightbox__image");
+    image.src = src;
+    image.alt = alt || "";
+    figureLightboxPreviousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    lightbox.hidden = false;
+
+    var closeButton = lightbox.querySelector(".internal-figure-lightbox__close");
+    if (closeButton) {
+      closeButton.focus();
+    }
+
+    if (!figureLightboxEscapeHandler) {
+      figureLightboxEscapeHandler = function (event) {
+        if (event.key === "Escape") {
+          closeFigureLightbox();
+        }
+      };
+      document.addEventListener("keydown", figureLightboxEscapeHandler);
+    }
+  }
+
+  function bindArticleFigureLightbox(contentHost) {
+    if (!contentHost || contentHost.dataset.figureLightboxBound) {
+      return;
+    }
+
+    contentHost.dataset.figureLightboxBound = "1";
+    contentHost.addEventListener("click", function (event) {
+      var trigger = event.target.closest(
+        ".internal-article-figure__trigger, .internal-article-figure img"
+      );
+      if (!trigger || !trigger.closest(".internal-article-content")) {
+        return;
+      }
+
+      var img = trigger.matches("img") ? trigger : trigger.querySelector("img");
+      if (!img) {
+        return;
+      }
+
+      event.preventDefault();
+      openFigureLightbox(img.getAttribute("src"), img.getAttribute("alt") || "");
+    });
+  }
+
+  function bindArticleTocNavigation(contentHost) {
+    if (!contentHost || contentHost.dataset.tocNavBound) {
+      return;
+    }
+
+    var mainCol =
+      contentHost.querySelector(".internal-article-content .css-7nll2u") ||
+      contentHost.querySelector(".css-7nll2u");
+    if (!mainCol) {
+      return;
+    }
+
+    contentHost.dataset.tocNavBound = "1";
+    contentHost.addEventListener("click", function (event) {
+      var link = event.target.closest(
+        ".internal-article-toc a[href*='#'], .internal-toc-dropdown a[href*='#']"
+      );
+      if (!link) {
+        return;
+      }
+
+      var id = getTocHashId(link.getAttribute("href"));
+      var section = findSectionById(mainCol, id);
+      if (!section) {
+        return;
+      }
+
+      event.preventDefault();
+      var href = link.getAttribute("href") || "";
+      if (href.indexOf("#") === 0) {
+        history.pushState(null, "", href);
+      }
+      scrollToTocSection(section);
+    });
   }
 
   function bindArticleTocSpy(contentHost) {
@@ -2690,6 +2835,8 @@
       expandArticleAccordions(contentHost);
       markArticleIntroText(mainCol);
       fixArticleTocScroll(contentHost);
+      bindArticleTocNavigation(contentHost);
+      bindArticleFigureLightbox(contentHost);
       bindArticleTocSpy(contentHost);
       ensureMobileTocUi(contentHost);
       return true;
@@ -2741,6 +2888,8 @@
     expandArticleAccordions(contentHost);
     markArticleIntroText(mainCol);
     fixArticleTocScroll(contentHost);
+    bindArticleTocNavigation(contentHost);
+    bindArticleFigureLightbox(contentHost);
     bindArticleTocSpy(contentHost);
     ensureMobileTocUi(contentHost);
 
@@ -2941,6 +3090,8 @@
     if (tocScope) {
       expandArticleAccordions(tocScope);
       fixArticleTocScroll(tocScope);
+      bindArticleTocNavigation(tocScope);
+      bindArticleFigureLightbox(tocScope);
       if (tocScope.querySelector(".internal-article-toc .mantine-List-item")) {
         bindArticleTocSpy(tocScope);
       }
