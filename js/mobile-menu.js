@@ -55,6 +55,15 @@
     { href: "/search/", label: "Пошук", icon: "/img/search.svg" },
     { href: "/download/", label: "Завантажити додаток" },
   ];
+  var TREE_TOGGLE_ICON = "/img/arrow_down.svg";
+
+  function resolveSiteUrl(path) {
+    return typeof siteUrl === "function" ? siteUrl(path) : path;
+  }
+
+  function treeToggleIconSrc() {
+    return resolveSiteUrl(TREE_TOGGLE_ICON);
+  }
 
   try {
     var cachedTree = sessionStorage.getItem(TREE_CACHE_KEY);
@@ -183,12 +192,14 @@
         '" aria-expanded="' +
         (isExpanded ? "true" : "false") +
         '">' +
-        '<img class="internal-tree-toggle__icon" src="/img/arrow_down.svg" alt="" width="12" height="12" aria-hidden="true" />' +
+        '<img class="internal-tree-toggle__icon" src="' +
+        escapeHtml(treeToggleIconSrc()) +
+        '" alt="" width="12" height="12" aria-hidden="true" />' +
         "</button>" +
         '<a class="internal-tree-link' +
         (isActive ? " internal-tree-link--active" : "") +
         '" href="' +
-        escapeHtml(node.href) +
+        escapeHtml(resolveSiteUrl(node.href)) +
         '">' +
         escapeHtml(node.label) +
         "</a>" +
@@ -265,7 +276,7 @@
 
     for (var i = 0; i < CATEGORIES.length; i++) {
       if (CATEGORIES[i].id === activeId) {
-        return linksRoot.querySelector('a[href="' + CATEGORIES[i].href + '"]');
+        return linksRoot.querySelector('a[href="' + resolveSiteUrl(CATEGORIES[i].href) + '"]');
       }
     }
 
@@ -379,7 +390,7 @@
         '<a class="' +
         className +
         '" href="' +
-        category.href +
+        escapeHtml(resolveSiteUrl(category.href)) +
         '" data-category-id="' +
         category.id +
         '">' +
@@ -601,7 +612,7 @@
       var href = link.getAttribute("href") || "";
       var isActive = false;
       for (var i = 0; i < CATEGORIES.length; i++) {
-        if (CATEGORIES[i].id === activeId && CATEGORIES[i].href === href) {
+        if (CATEGORIES[i].id === activeId && resolveSiteUrl(CATEGORIES[i].href) === href) {
           isActive = true;
           break;
         }
@@ -619,14 +630,14 @@
       link.classList.remove("mobile-menu-item--spaced-top");
     });
 
-    content.querySelectorAll('a.css-noumbc[href="/about/"]').forEach(function (link) {
+    content.querySelectorAll('a.css-noumbc[href="' + resolveSiteUrl("/about/") + '"]').forEach(function (link) {
       link.classList.remove("mobile-menu-item--spaced-top");
       if (!link.classList.contains("mobile-menu-item--about-top")) {
         link.classList.add("mobile-menu-item--about-top");
       }
     });
 
-    content.querySelectorAll('a.css-noumbc[href="/faq/"]').forEach(function (link) {
+    content.querySelectorAll('a.css-noumbc[href="' + resolveSiteUrl("/faq/") + '"]').forEach(function (link) {
       link.classList.remove("mobile-menu-item--spaced-top");
       link.classList.remove("mobile-menu-item--about-top");
       if (!link.classList.contains("mobile-menu-item--menu-gap")) {
@@ -634,26 +645,26 @@
       }
     });
 
-    content.querySelectorAll('a.css-noumbc[href="/documents/"]').forEach(function (link) {
+    content.querySelectorAll('a.css-noumbc[href="' + resolveSiteUrl("/documents/") + '"]').forEach(function (link) {
       if (!link.classList.contains("mobile-menu-item--menu-gap")) {
         link.classList.add("mobile-menu-item--menu-gap");
       }
     });
 
-    content.querySelectorAll('a.css-noumbc[href="/search/"]').forEach(function (link) {
+    content.querySelectorAll('a.css-noumbc[href="' + resolveSiteUrl("/search/") + '"]').forEach(function (link) {
       if (!link.classList.contains("mobile-menu-item--menu-gap")) {
         link.classList.add("mobile-menu-item--menu-gap");
       }
     });
 
-    content.querySelectorAll('a.header-download-btn[href="/download/"]').forEach(function (link) {
+    content.querySelectorAll('a.header-download-btn[href="' + resolveSiteUrl("/download/") + '"]').forEach(function (link) {
       link.classList.remove("css-noumbc");
       if (!link.classList.contains("mobile-menu-item--spaced-top")) {
         link.classList.add("mobile-menu-item--spaced-top");
       }
     });
 
-    content.querySelectorAll('a.css-noumbc[href="/download/"]').forEach(function (link) {
+    content.querySelectorAll('a.css-noumbc[href="' + resolveSiteUrl("/download/") + '"]').forEach(function (link) {
       link.classList.remove("css-noumbc");
       link.classList.add("header-download-btn");
       if (!link.classList.contains("mobile-menu-item--spaced-top")) {
@@ -674,9 +685,13 @@
   }
 
   function drawerMenuLinkHtml(item) {
+    var itemHref = resolveSiteUrl(item.href);
+
     if (item.href === "/download/") {
       return (
-        '<a class="header-download-btn mobile-menu-item--spaced-top" href="/download/">' +
+        '<a class="header-download-btn mobile-menu-item--spaced-top" href="' +
+        escapeHtml(itemHref) +
+        '">' +
         escapeHtml(item.label) +
         "</a>"
       );
@@ -690,7 +705,7 @@
     }
 
     var html =
-      '<a class="' + className + '" href="' + escapeHtml(item.href) + '"';
+      '<a class="' + className + '" href="' + escapeHtml(itemHref) + '"';
     if (item.target) {
       html += ' target="' + item.target + '"';
     }
@@ -703,7 +718,7 @@
         '<img alt="' +
         escapeHtml(item.iconAlt || "") +
         '" src="' +
-        item.icon +
+        escapeHtml(resolveSiteUrl(item.icon)) +
         '" width="' +
         iconSize +
         '" height="' +

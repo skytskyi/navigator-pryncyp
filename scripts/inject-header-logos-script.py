@@ -29,7 +29,7 @@ LOGO_PRELOAD = (
 PERSIST_SCRIPT = '<script src="/js/header-persist.js?v=2"></script>'
 PATCH_RUNTIME_HEAD = '<script src="/js/patch-runtime.js?v=5"></script>'
 JS_TAG = '<script src="/js/header-logos.js?v=17"></script>'
-MOBILE_JS_TAG = '<script src="/js/mobile-menu.js?v=30"></script>'
+MOBILE_JS_TAG = '<script src="/js/mobile-menu.js?v=31"></script>'
 BODY_PERSIST_RE = re.compile(r"<body>", re.IGNORECASE)
 
 
@@ -176,7 +176,7 @@ def upsert_mobile_assets(text: str) -> tuple[str, bool]:
     else:
         new_text = re.sub(
             r'src="/js/mobile-menu\.js\?v=\d+"',
-            'src="/js/mobile-menu.js?v=30"',
+            'src="/js/mobile-menu.js?v=31"',
             text,
         )
         if new_text != text:
