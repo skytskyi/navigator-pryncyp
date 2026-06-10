@@ -68,3 +68,32 @@
 .site-footer__link:active {
   color: #525252;
 }
+
+.site-footer .internal-article-link__sr-only,
+.site-footer .internal-article-legal-basis__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.site-footer .internal-article-external-link__icon,
+.site-footer .internal-article-doc-link__icon {
+  display: none !important;
+}
+
+.site-footer a.internal-article-external-link,
+.site-footer a.internal-article-doc-link,
+.site-footer a.internal-article-view-doc-link {
+  display: inline;
+  color: #616161 !important;
+  font-size: 10px !important;
+  font-weight: 400 !important;
+  line-height: 1.45 !important;
+  text-decoration: underline !important;
+}

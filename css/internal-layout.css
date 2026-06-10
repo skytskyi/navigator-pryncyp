@@ -242,6 +242,7 @@ body:has(.category-nav) .internal-page-shell {
   color: #ffffff;
   cursor: pointer;
   box-sizing: border-box;
+  font-family: e-Ukraine, sans-serif;
 }
 
 .internal-toc-toggle__icon {
@@ -252,6 +253,7 @@ body:has(.category-nav) .internal-page-shell {
 }
 
 .internal-toc-toggle__label {
+  font-family: e-Ukraine, sans-serif;
   font-size: 14px;
   font-weight: 400;
   line-height: 1;
@@ -910,8 +912,9 @@ body:has(.category-nav) .internal-page-shell {
   padding: 0 !important;
 }
 
-.internal-layout-active .internal-page-shell--privacy .internal-article-content .css-7nll2u {
-  gap: 32px !important;
+.internal-layout-active .internal-page-shell--privacy .internal-article-content .css-7nll2u > .css-sdnfq3 + .css-sdnfq3,
+.internal-layout-active .internal-page-shell--privacy .internal-article-content .css-7nll2u.mantine-1fr50if > .css-sdnfq3 + .css-sdnfq3 {
+  margin-top: 0 !important;
 }
 
 .internal-layout-active .internal-page-shell--privacy .internal-article-content .css-7nll2u > .css-bw3xdm {

@@ -522,7 +522,7 @@ def prepare_privacy_standalone_layout(content_host: Tag, soup: BeautifulSoup) ->
         attrs={"class": "css-k1l4fw mantine-1y9n8s7 internal-article-layout"},
     )
     white = soup.new_tag("div", attrs={"class": "internal-article-content"})
-    main_col = soup.new_tag("div", attrs={"class": "css-7nll2u mantine-1fr50if"})
+    main_col = soup.new_tag("div", attrs={"class": "css-7nll2u mantine-vdx6qn"})
 
     for child in list(content_wrap.children):
         if isinstance(child, Tag) and child.name != "style":
@@ -586,6 +586,39 @@ def repair_privacy_mistagged_headings(soup: BeautifulSoup, content: Tag) -> bool
     return changed
 
 
+def repair_privacy_section_wrappers(main_col: Tag, soup: BeautifulSoup) -> bool:
+    """Stack privacy white cards like article pages (20px gap, no double margins)."""
+    if main_col.select_one(":scope > .mantine-wfw6r2"):
+        return False
+
+    blocks = [
+        child
+        for child in list(main_col.children)
+        if isinstance(child, Tag) and "css-bw3xdm" in (child.get("class") or [])
+    ]
+    if not blocks:
+        return False
+
+    outer = soup.new_tag("div", attrs={"class": "mantine-wfw6r2"})
+    middle = soup.new_tag("div", attrs={"class": "mantine-vdx6qn"})
+    container = soup.new_tag("div", attrs={"class": "css-64gglc mantine-1fr50if"})
+
+    for block in blocks:
+        section_wrap = soup.new_tag("div", attrs={"class": "mantine-1fr50if"})
+        section_wrap.append(block.extract())
+        container.append(section_wrap)
+
+    middle.append(container)
+    outer.append(middle)
+    main_col.append(outer)
+
+    classes = [cls for cls in (main_col.get("class") or []) if cls != "mantine-1fr50if"]
+    if "mantine-vdx6qn" not in classes:
+        classes.append("mantine-vdx6qn")
+    main_col["class"] = classes
+    return True
+
+
 def repair_privacy_page_layout(soup: BeautifulSoup, content: Tag) -> bool:
     changed = False
     main_col = content.select_one(".css-7nll2u")
@@ -618,6 +651,9 @@ def repair_privacy_page_layout(soup: BeautifulSoup, content: Tag) -> bool:
         if moved or not wrap.get_text(strip=True):
             wrap.decompose()
             changed = True
+
+    if repair_privacy_section_wrappers(main_col, soup):
+        changed = True
 
     return changed
 
@@ -2388,6 +2424,7 @@ INLINE_LINK_SKIP_PARENT_CLASSES = frozenset(
         "about-page__social-buttons",
         "download-page-card__stores",
         "about-page__intro",
+        "site-footer",
     }
 )
 
@@ -2434,6 +2471,8 @@ def should_skip_inline_link_decor(anchor: Tag) -> bool:
     if anchor.find_parent(class_=lambda value: value and "article-feedback-callout" in (value or [])):
         return True
     if INLINE_LINK_SKIP_COMPONENT_CLASSES & set(classes):
+        return True
+    if "site-footer__link" in classes:
         return True
     if anchor.find_parent(
         class_=lambda value: _tag_has_any_class(value, INLINE_LINK_SKIP_PARENT_CLASSES)
@@ -2606,9 +2645,54 @@ def normalize_inline_doc_link_icons(soup: BeautifulSoup) -> bool:
     return changed
 
 
+def inline_link_normalize_root(soup: BeautifulSoup) -> Tag | None:
+    return (
+        soup.select_one(".internal-article-content")
+        or soup.select_one(".internal-main")
+        or soup.select_one("main")
+    )
+
+
+def repair_site_footer_links(soup: BeautifulSoup) -> bool:
+    """Strip article-style external-link decoration accidentally applied to footer."""
+    footer = soup.select_one("footer")
+    if not footer:
+        return False
+
+    changed = False
+    for anchor in footer.select("a.site-footer__link"):
+        classes = anchor.get("class") or []
+        if not (
+            INLINE_EXTERNAL_LINK_CLASS in classes
+            or anchor.select_one(".internal-article-link__sr-only")
+            or anchor.select_one(".internal-article-external-link__icon")
+        ):
+            continue
+
+        href = anchor.get("href") or ""
+        text = extract_inline_link_text(anchor)
+        if not text:
+            text = re.sub(r"\s*\(відкривається в новій вкладці\)\s*", " ", anchor.get_text(" ", strip=True)).strip()
+
+        anchor.clear()
+        anchor["class"] = ["site-footer__link"]
+        anchor["href"] = href
+        if href.startswith("http://") or href.startswith("https://"):
+            anchor["target"] = "_blank"
+            anchor["rel"] = "noopener noreferrer"
+        else:
+            anchor.attrs.pop("target", None)
+            anchor.attrs.pop("rel", None)
+        anchor.string = text
+        changed = True
+    return changed
+
+
 def normalize_inline_article_links(soup: BeautifulSoup) -> bool:
     changed = False
-    content = soup.select_one(".internal-article-content") or soup
+    content = inline_link_normalize_root(soup)
+    if not content:
+        return False
     for anchor in content.find_all("a", href=True):
         if should_skip_inline_link_decor(anchor):
             continue
@@ -2620,6 +2704,8 @@ def normalize_inline_article_links(soup: BeautifulSoup) -> bool:
             continue
         if decorate_inline_link(anchor, soup, link_type):
             changed = True
+    if repair_site_footer_links(soup):
+        changed = True
     return changed
 
 
