@@ -231,6 +231,18 @@ body.static-mobile-drawer-open {
   font-size: 13px;
 }
 
+.mobile-menu-tree .internal-tree-link--active {
+  color: #503334;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.mobile-menu-tree .internal-tree-link--active:hover {
+  color: #503334;
+  text-decoration: underline;
+}
+
 .mantine-Drawer-body a[href*="foreigners.navigator"] svg {
   display: none !important;
 }

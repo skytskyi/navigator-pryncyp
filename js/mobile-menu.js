@@ -45,6 +45,8 @@
   var staticDrawerListenersBound = false;
   var isPatchingDrawer = false;
   var patchDrawersFrame = null;
+  var patchDrawerQueue = [];
+  var lastSyncedPath = null;
 
   var DRAWER_MENU_ITEMS = [
     { href: "/about/", label: "Про нас" },
@@ -123,7 +125,7 @@
   }
 
   function getActiveCategory() {
-    var path = window.location.pathname;
+    var path = normalizePath(window.location.pathname);
     for (var i = 0; i < CATEGORIES.length; i++) {
       var category = CATEGORIES[i];
       for (var j = 0; j < category.prefixes.length; j++) {
@@ -150,13 +152,14 @@
   }
 
   function shouldExpandNode(href, path) {
-    if (expandedManual[href]) {
+    var normalizedHref = normalizePath(href);
+    if (expandedManual[href] || expandedManual[normalizedHref]) {
       return true;
     }
-    if (pathsEqual(href, path)) {
+    if (pathsEqual(normalizedHref, path)) {
       return false;
     }
-    return path.indexOf(href) === 0;
+    return path.indexOf(normalizedHref) === 0;
   }
 
   function renderTreeNodes(nodes, path) {
@@ -339,7 +342,23 @@
     if (tree) {
       tree.dataset.mobileMenuTreeHtml = treeHtml;
       bindMobileTreeToggles(tree);
+      scrollActiveTreeLinkIntoView(tree);
     }
+  }
+
+  function scrollActiveTreeLinkIntoView(treeRoot) {
+    if (!treeRoot || !staticDrawerOpen) {
+      return;
+    }
+
+    var activeLink = treeRoot.querySelector(".internal-tree-link--active");
+    if (!activeLink) {
+      return;
+    }
+
+    window.requestAnimationFrame(function () {
+      activeLink.scrollIntoView({ block: "nearest", inline: "nearest" });
+    });
   }
 
   function categoriesHtml(activeId) {
@@ -752,6 +771,7 @@
 
   function withDrawerPatch(fn) {
     if (isPatchingDrawer) {
+      patchDrawerQueue.push(fn);
       return;
     }
 
@@ -770,7 +790,46 @@
           subtree: true,
         });
       }
+      if (patchDrawerQueue.length) {
+        var queued = patchDrawerQueue.shift();
+        withDrawerPatch(queued);
+      }
     }
+  }
+
+  function resetTreeExpansionState() {
+    expandedManual = Object.create(null);
+  }
+
+  function refreshDrawerNavigation(drawerBody) {
+    if (!drawerBody) {
+      return;
+    }
+
+    var content = drawerBody.querySelector(".mantine-w2f2ab");
+    if (!content) {
+      return;
+    }
+
+    var path = normalizePath(window.location.pathname);
+    if (path !== lastSyncedPath) {
+      resetTreeExpansionState();
+      lastSyncedPath = path;
+    }
+
+    var activeCategory = getActiveCategory();
+    var activeId = activeCategory ? activeCategory.id : null;
+    var existing = content.querySelector("[data-mobile-menu-categories]");
+
+    if (existing) {
+      updateActiveLinks(existing, activeId);
+    }
+
+    fetchNavTree().then(function () {
+      withDrawerPatch(function () {
+        syncMobileMenuTree(content, activeId);
+      });
+    });
   }
 
   function ensureStaticDrawer() {
@@ -830,6 +889,7 @@
     root.setAttribute("aria-hidden", "false");
     document.body.classList.add("static-mobile-drawer-open");
     setBurgerOpened(true);
+    refreshDrawerNavigation(root.querySelector(".mantine-Drawer-body"));
   }
 
   function closeDrawer() {
@@ -889,13 +949,7 @@
       updateActiveLinks(existing, activeId);
     }
 
-    var syncTarget = content;
-    fetchNavTree().then(function () {
-      withDrawerPatch(function () {
-        syncMobileMenuTree(syncTarget, activeId);
-      });
-    });
-
+    refreshDrawerNavigation(drawerBody);
     return true;
   }
 
@@ -960,6 +1014,7 @@
   }
 
   function tick() {
+    lastSyncedPath = normalizePath(window.location.pathname);
     patchAllDrawers();
     bindBurger();
     bindObserver();
@@ -967,6 +1022,22 @@
       removeMobileMenuTrees();
     }
   }
+
+  window.addEventListener("pageshow", function (event) {
+    lastSyncedPath = normalizePath(window.location.pathname);
+    resetTreeExpansionState();
+
+    if (event.persisted && staticDrawerRoot) {
+      withDrawerPatch(function () {
+        refreshDrawerNavigation(staticDrawerRoot.querySelector(".mantine-Drawer-body"));
+      });
+      return;
+    }
+
+    if (staticDrawerOpen && staticDrawerRoot) {
+      refreshDrawerNavigation(staticDrawerRoot.querySelector(".mantine-Drawer-body"));
+    }
+  });
 
   var mobileTreeResizeTimer = null;
   window.addEventListener("resize", function () {
