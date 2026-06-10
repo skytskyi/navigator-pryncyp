@@ -756,6 +756,10 @@
   var SECTION_H2_CLASS = "internal-section-h2";
   var SECTION_H3_CLASS = "internal-section-h3";
 
+  function getTocDocBadgeIcon() {
+    return typeof siteUrl === "function" ? siteUrl(TOC_DOC_BADGE_ICON) : TOC_DOC_BADGE_ICON;
+  }
+
   function inAccordionLabel(node) {
     return !!node.closest(".mantine-Accordion-label");
   }
@@ -2190,7 +2194,7 @@
       escapeHtml(aria) +
       '">' +
       '<img src="' +
-      TOC_DOC_BADGE_ICON +
+      getTocDocBadgeIcon() +
       '" alt="" width="12" height="12" aria-hidden="true" />' +
       '<span class="internal-toc-doc-badge__text">' +
       escapeHtml(label) +

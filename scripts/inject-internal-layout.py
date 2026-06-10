@@ -17,7 +17,7 @@ CRITICAL_BLOCK = (
     'document.documentElement.classList.add("internal-layout-active","internal-layout-ready");'
     "</script>"
 )
-JS_TAG = '<script src="/js/internal-layout.js?v=60"></script>'
+JS_TAG = '<script src="/js/internal-layout.js?v=61"></script>'
 PATCH_RUNTIME_TAG = '<script src="/js/patch-runtime.js?v=3"></script>'
 
 OLD_CRITICAL_RE = re.compile(
@@ -81,7 +81,7 @@ def main() -> None:
 
         new_text = re.sub(
             r'src="/js/internal-layout\.js\?v=\d+"',
-            'src="/js/internal-layout.js?v=60"',
+            'src="/js/internal-layout.js?v=61"',
             text,
         )
         if new_text != text:
