@@ -746,6 +746,8 @@ def fix_orphan_h4_headings(content: Tag) -> bool:
                 seen_h3 = True
                 continue
             if heading.name == "h4" and not seen_h3:
+                if is_section_documents_h4_heading(heading):
+                    continue
                 _promote_heading_to_h3(heading)
                 seen_h3 = True
                 changed = True
@@ -1778,13 +1780,32 @@ SECTION_DOCUMENTS_H4_RE = re.compile(
 
 
 def is_section_documents_h4_heading(tag: Tag) -> bool:
-    if getattr(tag, "name", None) != "h4":
+    if getattr(tag, "name", None) not in ("h3", "h4"):
         return False
     classes = tag.get("class") or []
     if SECTION_DOCUMENTS_H4_DOCUMENTS_CLASS in classes:
         return True
     text = tag.get_text(" ", strip=True)
     return bool(SECTION_DOCUMENTS_H4_RE.match(text))
+
+
+def is_proper_section_documents_h4(tag: Tag) -> bool:
+    if getattr(tag, "name", None) != "h4":
+        return False
+    classes = tag.get("class") or []
+    if (
+        SECTION_DOCUMENTS_H4_DOCUMENTS_CLASS not in classes
+        or SECTION_H4_CLASS not in classes
+    ):
+        return False
+    icon = tag.select_one(f"img.{SECTION_DOCUMENTS_H4_ICON_CLASS}")
+    if not icon:
+        return False
+    if icon.get("src") != SECTION_DOCUMENTS_H4_ICON:
+        return False
+    if icon.get("width") != SECTION_DOCUMENTS_H4_ICON_SIZE:
+        return False
+    return tag.get_text(" ", strip=True) == SECTION_DOCUMENTS_H4_LABEL
 
 
 def build_section_documents_h4(soup: BeautifulSoup) -> Tag:
@@ -1818,22 +1839,37 @@ def build_section_documents_h4(soup: BeautifulSoup) -> Tag:
 def normalize_section_documents_h4_headings(soup: BeautifulSoup) -> bool:
     changed = False
     content = soup.select_one(".internal-article-content") or soup
-    for h4 in content.select("h4.internal-section-h4"):
-        text = h4.get_text(" ", strip=True)
-        if not SECTION_DOCUMENTS_H4_RE.match(text):
+
+    for heading in content.find_all(["h3", "h4"]):
+        if not is_section_documents_h4_heading(heading):
             continue
-        icon = h4.select_one(f"img.{SECTION_DOCUMENTS_H4_ICON_CLASS}")
-        classes = h4.get("class") or []
-        if (
-            icon
-            and SECTION_DOCUMENTS_H4_DOCUMENTS_CLASS in classes
-            and icon.get("src") == SECTION_DOCUMENTS_H4_ICON
-            and icon.get("width") == SECTION_DOCUMENTS_H4_ICON_SIZE
-            and text == SECTION_DOCUMENTS_H4_LABEL
-        ):
+        if is_proper_section_documents_h4(heading):
             continue
-        h4.replace_with(build_section_documents_h4(soup))
+        heading.replace_with(build_section_documents_h4(soup))
         changed = True
+
+    for section in content.select(".css-sdnfq3[id]"):
+        h2 = section.find("h2", class_=lambda value: value and SECTION_H2_CLASS in value)
+        if h2 and ADDITIONAL_SOURCES_H2_RE.match(h2.get_text(strip=True)):
+            continue
+        doc_wrap = section.select_one(".mantine-1fv3ct")
+        if not doc_wrap or not doc_wrap.select("a.css-uex5rt"):
+            continue
+
+        prev = doc_wrap.find_previous_sibling()
+        while isinstance(prev, NavigableString) and not str(prev).strip():
+            prev = prev.find_previous_sibling()
+
+        if isinstance(prev, Tag) and is_proper_section_documents_h4(prev):
+            continue
+
+        if isinstance(prev, Tag) and is_section_documents_h4_heading(prev):
+            prev.decompose()
+            changed = True
+
+        doc_wrap.insert_before(build_section_documents_h4(soup))
+        changed = True
+
     return changed
 
 
