@@ -18,6 +18,23 @@ html.nav-header-persist body {
   padding-top: var(--nav-persist-height, 120px);
 }
 
+@media (max-width: 1279px) {
+  body > #__next > .mantine-gemcqc {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    width: 100%;
+    background: #ffffff;
+  }
+
+  body > #__next > .mantine-gemcqc > header.css-9r8uj3 {
+    position: relative;
+    top: auto;
+    z-index: auto;
+  }
+}
+
 header img[alt="logo"],
 header a:has(> img[alt="logo"]) {
   display: none !important;

@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-CSS_TAG = '<link rel="stylesheet" href="/css/header-logos.css?v=23"/>'
+CSS_TAG = '<link rel="stylesheet" href="/css/header-logos.css?v=24"/>'
 GLOBAL_CSS_TAG = '<link rel="stylesheet" href="/css/site-global.css?v=4"/>'
 MOBILE_CSS_TAG = '<link rel="stylesheet" href="/css/mobile-menu.css?v=40"/>'
 HEADER_CRITICAL_STYLE = (
@@ -209,7 +209,7 @@ def main() -> None:
 
         new_text = re.sub(
             r'href="/css/header-logos\.css\?v=\d+"',
-            'href="/css/header-logos.css?v=23"',
+            'href="/css/header-logos.css?v=24"',
             text,
         )
         if new_text != text:
