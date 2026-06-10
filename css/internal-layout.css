@@ -236,6 +236,26 @@ body:has(.category-nav) .internal-page-shell {
   justify-content: flex-end;
 }
 
+.internal-breadcrumbs-row--standalone:not(:has(.internal-breadcrumbs)) {
+  margin-bottom: 0;
+}
+
+.internal-main-header:has(> .internal-breadcrumbs-row--standalone:not(:has(.internal-breadcrumbs))) .internal-page-title {
+  margin-top: 0;
+}
+
+@media (min-width: 1280px) {
+  .internal-breadcrumbs-row--standalone:not(:has(.internal-breadcrumbs)) {
+    display: none;
+  }
+}
+
+@media (max-width: 1279px) {
+  .internal-page-shell--standalone {
+    padding-top: 16px;
+  }
+}
+
 .internal-toc-toggle-wrap {
   position: relative;
   flex-shrink: 0;
@@ -1853,6 +1873,10 @@ body:has(.category-nav) .internal-page-shell {
     flex-direction: column;
     align-items: stretch;
     padding: 40px var(--site-gutter, 16px) 32px;
+  }
+
+  .internal-page-shell--standalone {
+    padding-top: 16px;
   }
 
   .internal-page-shell--standalone .internal-main,
