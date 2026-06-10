@@ -41,6 +41,18 @@
     return (anchor.getAttribute("href") || "").trim();
   }
 
+  function normalizedCardPath(href) {
+    var path = href || "/";
+    if (typeof stripSiteBasePath === "function") {
+      path = stripSiteBasePath(path);
+    }
+    return path;
+  }
+
+  function resolveCategoryHref(href) {
+    return typeof siteUrl === "function" ? siteUrl(href) : href;
+  }
+
   function isInjuredSubCard(anchor) {
     return INJURED_SUB_RE.test(cardHref(anchor));
   }
@@ -61,8 +73,9 @@
   }
 
   function setHref(anchor, href) {
-    if (cardHref(anchor) !== href) {
-      anchor.setAttribute("href", href);
+    var resolved = resolveCategoryHref(href);
+    if (cardHref(anchor) !== resolved) {
+      anchor.setAttribute("href", resolved);
     }
   }
 
@@ -215,7 +228,7 @@
     }
 
     links.forEach(function (anchor) {
-      var href = cardHref(anchor);
+      var href = normalizedCardPath(cardHref(anchor));
       var title = cardTitle(anchor);
       var target = CATEGORY_HREFS[href] || CATEGORY_HREFS[title];
       if (target) {

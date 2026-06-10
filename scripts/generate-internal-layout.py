@@ -872,12 +872,42 @@ def repair_documents_page_layout(content: Tag) -> bool:
         if SECTION_H2_CLASS not in classes:
             label["class"] = [*classes, SECTION_H2_CLASS]
         changed = True
-    if repair_about_card_layout(content):
-        changed = True
     if flatten_sections_wrap(main_col):
         changed = True
-    if repair_about_card_layout(content):
+    return changed
+
+
+def repair_faq_page_intro(content: Tag, soup: BeautifulSoup) -> bool:
+    """Match FAQ lead copy styling to standalone documents page intro."""
+    main_col = content.select_one(".css-7nll2u")
+    if not main_col:
+        return False
+
+    changed = False
+    header = main_col.select_one(".mantine-vgkn1f")
+    if header:
+        h3 = header.select_one("h3")
+        text = (h3.get_text(strip=True) if h3 else "") or "Відповідаємо на найпоширеніші запитання:"
+        intro = soup.new_tag(
+            "p",
+            attrs={"class": "css-1xvvgf7 internal-article-intro", "color": "#000000"},
+        )
+        intro.string = text
+        header.replace_with(intro)
         changed = True
+
+    wrap = main_col.select_one(":scope > .mantine-1fr50if")
+    if not wrap:
+        wrap = soup.new_tag("div", attrs={"class": "mantine-1fr50if"})
+        for child in list(main_col.children):
+            if not isinstance(child, Tag):
+                continue
+            if "css-1sctyhq" in (child.get("class") or []):
+                continue
+            wrap.append(child.extract())
+        main_col.append(wrap)
+        changed = True
+
     return changed
 
 
@@ -901,6 +931,8 @@ def apply_heading_normalization(soup: BeautifulSoup) -> bool:
     path = normalize_path(main.get("data-internal-layout-baked") or "") if main else ""
     for content in soup.select(".internal-article-content"):
         if path in ABOUT_STYLE_PAGES:
+            if path == "/faq/" and repair_faq_page_intro(content, soup):
+                changed = True
             if repair_about_page_layout(content, soup):
                 changed = True
         elif path == "/documents/":
@@ -2308,6 +2340,38 @@ def is_inside_additional_sources_section(anchor: Tag) -> bool:
     return bool(ADDITIONAL_SOURCES_H2_RE.match(h2.get_text(strip=True)))
 
 
+INLINE_LINK_SKIP_COMPONENT_CLASSES = frozenset(
+    {
+        "about-partner-btn",
+        "download-store-btn",
+    }
+)
+INLINE_LINK_SKIP_PARENT_CLASSES = frozenset(
+    {
+        "about-partners-list",
+        "about-page__social-buttons",
+        "download-page-card__stores",
+        "about-page__intro",
+    }
+)
+
+
+def _tag_has_class(value, class_name: str) -> bool:
+    if not value:
+        return False
+    if isinstance(value, list):
+        return class_name in value
+    return value == class_name
+
+
+def _tag_has_any_class(value, class_names: frozenset[str]) -> bool:
+    if not value:
+        return False
+    if isinstance(value, list):
+        return bool(class_names & set(value))
+    return value in class_names
+
+
 def should_skip_inline_link_decor(anchor: Tag) -> bool:
     classes = anchor.get("class") or []
     decorated = {
@@ -2332,6 +2396,12 @@ def should_skip_inline_link_decor(anchor: Tag) -> bool:
     if anchor.find_parent(class_=lambda value: value and "internal-toc-dropdown" in (value or [])):
         return True
     if anchor.find_parent(class_=lambda value: value and "article-feedback-callout" in (value or [])):
+        return True
+    if INLINE_LINK_SKIP_COMPONENT_CLASSES & set(classes):
+        return True
+    if anchor.find_parent(
+        class_=lambda value: _tag_has_any_class(value, INLINE_LINK_SKIP_PARENT_CLASSES)
+    ):
         return True
     if "css-16clbz5" in classes or "css-1kb7s85" in classes:
         return True
@@ -4007,6 +4077,39 @@ def is_layout_already_baked(soup: BeautifulSoup, main: Tag, path: str, standalon
     return True
 
 
+def repair_about_page_custom_links(soup: BeautifulSoup) -> bool:
+    """Restore about-page partner/social/intro links flattened by inline link normalizer."""
+    changed = False
+    if not soup.select_one(".about-partner-btn__name"):
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(
+            "update_about_page",
+            Path(__file__).resolve().parent / "update-about-page.py",
+        )
+        if spec and spec.loader:
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            mod.rebuild_partners_section(soup)
+            mod.rebuild_social_buttons(soup)
+            changed = True
+
+    intro = soup.select_one(".about-page__intro .mantine-172zsy7")
+    if intro:
+        link = intro.find(
+            "a",
+            class_=lambda value: value and INLINE_EXTERNAL_LINK_CLASS in (value or []),
+        )
+        if link:
+            href = link.get("href") or "https://pryncyp.com"
+            text = extract_inline_link_text(link)
+            new = soup.new_tag("a", href=href, target="_blank")
+            new.string = text
+            link.replace_with(new)
+            changed = True
+    return changed
+
+
 def bake_page(html_path: Path, tree: dict, force: bool = False) -> bool:
     path = path_from_file(html_path)
     if path == "/":
@@ -4045,6 +4148,8 @@ def bake_page(html_path: Path, tree: dict, force: bool = False) -> bool:
         normalize_additional_sources_sections(soup)
         normalize_section_document_blocks(soup)
         normalize_section_documents_h4_headings(soup)
+        if path == "/about/":
+            repair_about_page_custom_links(soup)
         normalize_inline_article_links(soup)
         normalize_external_link_icons(soup)
         normalize_inline_doc_link_icons(soup)
@@ -4252,6 +4357,8 @@ def bake_page(html_path: Path, tree: dict, force: bool = False) -> bool:
     normalize_additional_sources_sections(soup)
     normalize_section_document_blocks(soup)
     normalize_section_documents_h4_headings(soup)
+    if path == "/about/":
+        repair_about_page_custom_links(soup)
     normalize_inline_article_links(soup)
     normalize_external_link_icons(soup)
     normalize_inline_doc_link_icons(soup)
