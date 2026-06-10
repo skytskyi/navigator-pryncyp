@@ -88,8 +88,28 @@
     return path;
   }
 
+  function ensureMainContentTarget() {
+    var main =
+      document.querySelector("main.css-yp9swi") ||
+      document.querySelector("main") ||
+      document.querySelector(".internal-page-shell");
+    if (main && !main.id) {
+      main.id = "main-content";
+    }
+  }
+
+  function runAccessibilityShell() {
+    ensureMainContentTarget();
+  }
+
   window.getSiteBasePath = getSiteBasePath;
   window.stripSiteBasePath = stripSiteBasePath;
   window.siteUrl = siteUrl;
   window.normalizeSitePath = normalizeSitePath;
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", runAccessibilityShell);
+  } else {
+    runAccessibilityShell();
+  }
 })();

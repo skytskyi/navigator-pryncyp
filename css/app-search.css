@@ -33,7 +33,7 @@
 }
 
 .app-search-form__input::placeholder {
-  color: #908f8b;
+  color: var(--site-text-placeholder-color, #616161);
 }
 
 .app-search-form__input::-webkit-search-cancel-button {

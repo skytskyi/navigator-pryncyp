@@ -10,8 +10,8 @@ ROOT = Path(__file__).resolve().parent.parent
 SECTION_DIRS = frozenset(
     {"serviceman", "injured", "injured-military", "ingured-mia", "veterans", "pow", "family"}
 )
-CSS_TAG = '<link rel="stylesheet" href="/css/article-feedback.css?v=10"/>'
-JS_TAG = '<script src="/js/article-feedback.js?v=7"></script>'
+CSS_TAG = '<link rel="stylesheet" href="/css/article-feedback.css?v=13"/>'
+JS_TAG = '<script src="/js/article-feedback.js?v=8"></script>'
 
 
 def is_section_page(path: Path) -> bool:
@@ -26,7 +26,7 @@ def upsert_css(text: str) -> tuple[str, bool]:
     changed = False
     new_text = re.sub(
         r'href="/css/article-feedback\.css\?v=\d+"',
-        'href="/css/article-feedback.css?v=10"',
+        'href="/css/article-feedback.css?v=13"',
         text,
     )
     if new_text != text:
@@ -53,7 +53,7 @@ def upsert_js(text: str) -> tuple[str, bool]:
     changed = False
     new_text = re.sub(
         r'src="/js/article-feedback\.js\?v=\d+"',
-        'src="/js/article-feedback.js?v=7"',
+        'src="/js/article-feedback.js?v=8"',
         text,
     )
     if new_text != text:

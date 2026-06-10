@@ -1,7 +1,73 @@
+:root {
+  --site-text-muted-color: #616161;
+  --site-text-placeholder-color: #616161;
+  --site-focus-ring-width: 2px;
+  --site-focus-ring-color: #000000;
+  --site-focus-ring-offset: 2px;
+}
+
 /* Reserve scrollbar width on every page to prevent header/menu layout shift. */
 html {
   overflow-y: scroll;
   scrollbar-gutter: stable;
+}
+
+.site-skip-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 10000;
+  margin: 0;
+  padding: 12px 20px;
+  background: #000000;
+  color: #ffffff;
+  font-family: e-Ukraine, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+  text-decoration: none;
+  transform: translateY(-120%);
+  transition: transform 0.2s ease;
+}
+
+.site-skip-link:focus,
+.site-skip-link:focus-visible {
+  transform: translateY(0);
+  outline: var(--site-focus-ring-width) solid #ffffff;
+  outline-offset: calc(-1 * var(--site-focus-ring-offset));
+}
+
+.internal-breadcrumbs__item:focus-visible,
+.category-nav__link:focus-visible,
+.mobile-menu-categories__link:focus-visible,
+.mantine-Drawer-body a.css-noumbc:focus-visible,
+.mantine-Drawer-body button.css-noumbc:focus-visible,
+header .css-zfqabr a.css-bho8e5:focus-visible,
+header .css-zfqabr a.css-clvzh3:focus-visible,
+header .css-zfqabr a[href*="foreigners.navigator"]:focus-visible,
+header .header-search-btn:focus-visible,
+header .header-download-btn:focus-visible,
+a.css-1gooe0:focus-visible,
+a.css-1q51wqn:focus-visible,
+.internal-figure-lightbox__close:focus-visible,
+.internal-tree-toggle:focus-visible,
+.internal-tree-link:focus-visible,
+.site-search-page__tab:focus-visible,
+.site-search-result:focus-visible,
+.internal-strip:focus-visible,
+.mantine-Burger-root:focus-visible,
+.static-mobile-drawer__close:focus-visible {
+  outline: var(--site-focus-ring-width) solid var(--site-focus-ring-color);
+  outline-offset: var(--site-focus-ring-offset);
+}
+
+.internal-strip:focus-visible {
+  outline-color: rgba(255, 255, 255, 0.9);
+}
+
+.internal-toc-toggle:focus-visible {
+  outline: var(--site-focus-ring-width) solid rgba(255, 255, 255, 0.9);
+  outline-offset: var(--site-focus-ring-offset);
 }
 
 /* Keep footer at the bottom when page content is shorter than the viewport. */

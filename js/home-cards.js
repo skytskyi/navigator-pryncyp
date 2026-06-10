@@ -2,6 +2,17 @@
   var MERGED_HREF = "/injured/";
   var MERGED_TITLE = "Поранені";
   var CATEGORY_LABEL = "Оберіть тему правової допомоги:";
+  var CARD_PALETTE = [
+    "#686F4E",
+    "#61523A",
+    "#503334",
+    "#47515A",
+    "#434A3A",
+    "#383C3B",
+    "#37332E",
+    "#151D23",
+    "#2B3A62",
+  ];
   var INJURED_SUB_RE = /injured-military|ingured-mia/i;
   var DESKTOP_COUNT = 5;
   var CATEGORY_HREFS = {
@@ -195,10 +206,6 @@
     merged.forEach(function (anchor) {
       setHref(anchor, MERGED_HREF);
       setTitle(anchor, MERGED_TITLE);
-      var inner = anchor.querySelector(":scope > div");
-      if (inner) {
-        inner.style.setProperty("background", "#908F8B", "important");
-      }
     });
 
     links
@@ -208,6 +215,58 @@
       .forEach(setDesktopWidth);
 
     return true;
+  }
+
+  function applyHomeCardPalette() {
+    if (!isHomePage()) {
+      return false;
+    }
+
+    var container = getCardContainer();
+    if (!container) {
+      return false;
+    }
+
+    var links = Array.from(
+      container.querySelectorAll("a.css-1gooe0, a.css-1q51wqn")
+    );
+    if (!links.length) {
+      return false;
+    }
+
+    var seen = {};
+    var order = [];
+    links.forEach(function (anchor) {
+      var href = normalizedCardPath(cardHref(anchor));
+      if (!seen[href]) {
+        seen[href] = true;
+        order.push(href);
+      }
+    });
+
+    var hrefColor = {};
+    order.forEach(function (href, index) {
+      hrefColor[href] = CARD_PALETTE[index % CARD_PALETTE.length];
+    });
+
+    var changed = false;
+    links.forEach(function (anchor) {
+      var href = normalizedCardPath(cardHref(anchor));
+      var color = hrefColor[href];
+      if (!color) {
+        return;
+      }
+      var inner = anchor.querySelector(":scope > div");
+      if (!inner) {
+        return;
+      }
+      if (inner.style.getPropertyValue("background-color") !== color) {
+        inner.style.setProperty("background", color, "important");
+        changed = true;
+      }
+    });
+
+    return changed;
   }
 
   function fixCategoryHrefs() {
@@ -271,6 +330,7 @@
     injectCategoryLabel();
     fixCategoryHrefs();
     mergeInjuredCards();
+    applyHomeCardPalette();
     ensureDesktopCardCta();
   }
 

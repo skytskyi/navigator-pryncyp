@@ -22,77 +22,77 @@
         {
           "label": "Оскарження дій командира",
           "href": "/serviceman/appeal-commander-action/",
-          "color": "#908F8B",
+          "color": "#503334",
           "icon": "https://storage.googleapis.com/b-legal-navigator/replika_2_11c8f33b5f/replika_2_11c8f33b5f.png",
           "children": []
         },
         {
           "label": "Види грошових виплат",
           "href": "/serviceman/payoff/",
-          "color": "#7D997B",
+          "color": "#47515A",
           "icon": "https://storage.googleapis.com/b-legal-navigator/recovery_1_7d131f6d0e/recovery_1_7d131f6d0e.png",
           "children": []
         },
         {
           "label": "Дисциплінарна та матеріальна відповідальність",
           "href": "/serviceman/disciplinary-material-liability/",
-          "color": "#B29069",
+          "color": "#434A3A",
           "icon": "https://storage.googleapis.com/b-legal-navigator/3d_icons_12_73ccc3b9d9/3d_icons_12_73ccc3b9d9.png",
           "children": []
         },
         {
           "label": "Адміністративна відповідальність",
           "href": "/serviceman/administrative-liability/",
-          "color": "#503334",
+          "color": "#383C3B",
           "icon": "https://storage.googleapis.com/b-legal-navigator/arrow_7dc0941587/arrow_7dc0941587.svg",
           "children": []
         },
         {
           "label": "Кримінальна відповідальність",
           "href": "/serviceman/criminal-liability/",
-          "color": "#908F8B",
+          "color": "#37332E",
           "icon": "https://storage.googleapis.com/b-legal-navigator/Exclamation_Mark_1_da78af46d5/Exclamation_Mark_1_da78af46d5.png",
           "children": [
             {
               "label": "Загальна інформація про кримінальну відповідальність",
               "href": "/serviceman/criminal-liability/criminal-info/",
               "children": [],
-              "color": "#908F8B",
+              "color": "#686F4E",
               "icon": "https://storage.googleapis.com/b-legal-navigator/vijskovij_9cb17c2acf/vijskovij_9cb17c2acf.svg"
             },
             {
               "label": "Самовільне залишення частини",
               "href": "/serviceman/criminal-liability/szch/",
               "children": [],
-              "color": "#B29069",
+              "color": "#61523A",
               "icon": "https://storage.googleapis.com/b-legal-navigator/arrow_7dc0941587/arrow_7dc0941587.svg"
             },
             {
               "label": "Непокора та невиконання наказу",
               "href": "/serviceman/criminal-liability/failure-to-order/",
               "children": [],
-              "color": "#61523A",
+              "color": "#503334",
               "icon": "https://storage.googleapis.com/b-legal-navigator/plane_3475ae8b6f/plane_3475ae8b6f.svg"
             },
             {
               "label": "Втрата зброї",
               "href": "/serviceman/criminal-liability/loss-weapons/",
               "children": [],
-              "color": "#686F4E",
+              "color": "#47515A",
               "icon": "https://storage.googleapis.com/b-legal-navigator/folder_8fb5db0491/folder_8fb5db0491.svg"
             },
             {
               "label": "Корупція",
               "href": "/serviceman/criminal-liability/corruption/",
               "children": [],
-              "color": "#503334",
+              "color": "#434A3A",
               "icon": "https://storage.googleapis.com/b-legal-navigator/military_a0abd59b90/military_a0abd59b90.svg"
             },
             {
               "label": "Сексуальні домагання",
               "href": "/serviceman/criminal-liability/sexual-harassment/",
               "children": [],
-              "color": "#908F8B",
+              "color": "#383C3B",
               "icon": "https://storage.googleapis.com/b-legal-navigator/treatment_b5a48a52c9/treatment_b5a48a52c9.svg"
             }
           ]
@@ -100,14 +100,14 @@
         {
           "label": "Звільнення зі служби",
           "href": "/serviceman/dismissal/",
-          "color": "#686F4E",
+          "color": "#151D23",
           "icon": "https://storage.googleapis.com/b-legal-navigator/Bez_nazvi_7_1_d6c42237d5/Bez_nazvi_7_1_d6c42237d5.png",
           "children": []
         },
         {
           "label": "Пільги",
           "href": "/serviceman/benefits-military/",
-          "color": "#61523A",
+          "color": "#2B3A62",
           "icon": "https://storage.googleapis.com/b-legal-navigator/house_0d8883a89d/house_0d8883a89d.png",
           "children": []
         }
@@ -121,97 +121,97 @@
         {
           "label": "Поранені із системи МОУ",
           "href": "/injured-military/",
-          "color": "#908F8B",
+          "color": "#686F4E",
           "icon": "https://storage.googleapis.com/b-legal-navigator/treatment_b5a48a52c9/treatment_b5a48a52c9.svg",
           "children": [
             {
               "label": "Евакуація",
               "href": "/injured-military/evacuation/",
-              "color": "#908F8B",
+              "color": "#686F4E",
               "icon": "https://storage.googleapis.com/b-legal-navigator/arrow_7dc0941587/arrow_7dc0941587.svg",
               "children": []
             },
             {
               "label": "Лікування та виплати",
               "href": "/injured-military/healthcare-mou/",
-              "color": "#B29069",
+              "color": "#61523A",
               "icon": "https://storage.googleapis.com/b-legal-navigator/treatment_b5a48a52c9/treatment_b5a48a52c9.svg",
               "children": []
             },
             {
               "label": "Військово-лікарська комісія",
               "href": "/injured-military/vlk/",
-              "color": "#61523A",
+              "color": "#503334",
               "icon": "https://storage.googleapis.com/b-legal-navigator/military_a0abd59b90/military_a0abd59b90.svg",
               "children": []
             },
             {
               "label": "Лікування за кордоном",
               "href": "/injured-military/healthcare-abroad/",
-              "color": "#503334",
+              "color": "#47515A",
               "icon": "https://storage.googleapis.com/b-legal-navigator/plane_3475ae8b6f/plane_3475ae8b6f.svg",
               "children": []
             },
             {
               "label": "Встановлення групи інвалідності",
               "href": "/injured-military/msek/",
-              "color": "#686F4E",
+              "color": "#434A3A",
               "icon": "https://storage.googleapis.com/b-legal-navigator/folder_8fb5db0491/folder_8fb5db0491.svg",
               "children": []
             },
             {
               "label": "Протезування військових",
               "href": "/injured-military/prosthetics/",
-              "color": "#B29069",
+              "color": "#383C3B",
               "icon": "https://storage.googleapis.com/b-legal-navigator/protezuvannyapng_93e0d861ba/protezuvannyapng_93e0d861ba.png",
               "children": [
                 {
                   "label": "Контроль лікування та перші дії після ампутації",
                   "href": "/injured-military/prosthetics/primary-treatment/",
                   "children": [],
-                  "color": "#61523A",
+                  "color": "#686F4E",
                   "icon": "https://storage.googleapis.com/b-legal-navigator/treatment_b5a48a52c9/treatment_b5a48a52c9.svg"
                 },
                 {
                   "label": "Реабілітація після ампутації",
                   "href": "/injured-military/prosthetics/rehabilitation/",
                   "children": [],
-                  "color": "#B29069",
+                  "color": "#61523A",
                   "icon": "https://storage.googleapis.com/b-legal-navigator/reabilitacziyapng_286ca60b8a/reabilitacziyapng_286ca60b8a.png"
                 },
                 {
                   "label": "Проходження ВЛК після ампутації",
                   "href": "/injured-military/prosthetics/vlk-after-amputation/",
                   "children": [],
-                  "color": "#686F4E",
+                  "color": "#503334",
                   "icon": "https://storage.googleapis.com/b-legal-navigator/military_a0abd59b90/military_a0abd59b90.svg"
                 },
                 {
                   "label": "Підготовка до протезування",
                   "href": "/injured-military/prosthetics/preparation-prosthetics/",
                   "children": [],
-                  "color": "#908F8B",
+                  "color": "#47515A",
                   "icon": "https://storage.googleapis.com/b-legal-navigator/pidgotovkapng_b5c79bf77e/pidgotovkapng_b5c79bf77e.png"
                 },
                 {
                   "label": "Вибір протезу та протезного підприємства, документи від В/Ч",
                   "href": "/injured-military/prosthetics/bureaucracy-prosthetics/",
                   "children": [],
-                  "color": "#61523A",
+                  "color": "#434A3A",
                   "icon": "https://storage.googleapis.com/b-legal-navigator/folder_8fb5db0491/folder_8fb5db0491.svg"
                 },
                 {
                   "label": "Етапи отримання протезу",
                   "href": "/injured-military/prosthetics/stages-prosthesis/",
                   "children": [],
-                  "color": "#B29069",
+                  "color": "#383C3B",
                   "icon": "https://storage.googleapis.com/b-legal-navigator/arrow_7dc0941587/arrow_7dc0941587.svg"
                 },
                 {
                   "label": "Протезування за кордоном та за рахунок фондів",
                   "href": "/injured-military/prosthetics/prosthetics-abroad-funds/",
                   "children": [],
-                  "color": "#686F4E",
+                  "color": "#37332E",
                   "icon": "https://storage.googleapis.com/b-legal-navigator/plane_3475ae8b6f/plane_3475ae8b6f.svg"
                 }
               ]
@@ -227,42 +227,42 @@
             {
               "label": "Евакуація",
               "href": "/ingured-mia/evacuation-mia/",
-              "color": "#61523A",
+              "color": "#686F4E",
               "icon": "https://storage.googleapis.com/b-legal-navigator/3d_icons_56_3797e2a670/3d_icons_56_3797e2a670.png",
               "children": []
             },
             {
               "label": "Лікування та виплати",
               "href": "/ingured-mia/health-mvs/",
-              "color": "#B29069",
+              "color": "#61523A",
               "icon": "https://storage.googleapis.com/b-legal-navigator/medicine_b6035ff000/medicine_b6035ff000.png",
               "children": [
                 {
                   "label": "Лікування",
                   "href": "/ingured-mia/health-mvs/healthcare/",
                   "children": [],
-                  "color": "#B29069",
+                  "color": "#686F4E",
                   "icon": "https://storage.googleapis.com/b-legal-navigator/plyus_1_0c8a3ab697/plyus_1_0c8a3ab697.png"
                 },
                 {
                   "label": "Документи",
                   "href": "/ingured-mia/health-mvs/files/",
                   "children": [],
-                  "color": "#7D997B",
+                  "color": "#61523A",
                   "icon": "https://storage.googleapis.com/b-legal-navigator/3d_icons2_3_56ee06ddb5/3d_icons2_3_56ee06ddb5.png"
                 },
                 {
                   "label": "Виплати",
                   "href": "/ingured-mia/health-mvs/payment/",
                   "children": [],
-                  "color": "#686F4E",
+                  "color": "#503334",
                   "icon": "https://storage.googleapis.com/b-legal-navigator/3d_icons_12_6be8efcb1e/3d_icons_12_6be8efcb1e.png"
                 },
                 {
                   "label": "Виписка з лікарні та повернення до в/ч",
                   "href": "/ingured-mia/health-mvs/release/",
                   "children": [],
-                  "color": "#1C3D5B",
+                  "color": "#47515A",
                   "icon": "https://storage.googleapis.com/b-legal-navigator/3d_icons_56_ddb1c1fd71/3d_icons_56_ddb1c1fd71.png"
                 }
               ]
@@ -270,21 +270,21 @@
             {
               "label": "ВЛК та визначення придатності",
               "href": "/ingured-mia/vlk-mia/",
-              "color": "#8B5E1B",
+              "color": "#503334",
               "icon": "https://storage.googleapis.com/b-legal-navigator/3d_icons_7_8c24d16d4f/3d_icons_7_8c24d16d4f.png",
               "children": [
                 {
                   "label": "Комісія та відпустка",
                   "href": "/ingured-mia/vlk-mia/council/",
                   "children": [],
-                  "color": "#47515A",
+                  "color": "#686F4E",
                   "icon": "https://storage.googleapis.com/b-legal-navigator/glass_1_295cacc75b/glass_1_295cacc75b.png"
                 },
                 {
                   "label": "Визначення придатності",
                   "href": "/ingured-mia/vlk-mia/Combat-effectiveness/",
                   "children": [],
-                  "color": "#7D997B",
+                  "color": "#61523A",
                   "icon": "https://storage.googleapis.com/b-legal-navigator/recovery_1_06b2e9fe7d/recovery_1_06b2e9fe7d.png"
                 }
               ]
@@ -292,7 +292,7 @@
             {
               "label": "Встановлення групи інвалідності",
               "href": "/ingured-mia/msec-mia/",
-              "color": "#686F4E",
+              "color": "#47515A",
               "icon": "https://storage.googleapis.com/b-legal-navigator/3d_icons_14_ddb07d5cf8/3d_icons_14_ddb07d5cf8.png",
               "children": []
             }
@@ -308,56 +308,56 @@
         {
           "label": "Статуси та документи",
           "href": "/veterans/veteran-status/",
-          "color": "#908F8B",
+          "color": "#686F4E",
           "icon": "https://storage.googleapis.com/b-legal-navigator/treatment_b5a48a52c9/treatment_b5a48a52c9.svg",
           "children": []
         },
         {
           "label": "Оформлення відстрочки",
           "href": "/veterans/deferment/",
-          "color": "#3A6059",
+          "color": "#61523A",
           "icon": "https://storage.googleapis.com/b-legal-navigator/Exclamation_Mark_1_da78af46d5/Exclamation_Mark_1_da78af46d5.png",
           "children": []
         },
         {
           "label": "Пільги та гарантії",
           "href": "/veterans/benefits-guarantees/",
-          "color": "#B29069",
+          "color": "#503334",
           "icon": "https://storage.googleapis.com/b-legal-navigator/folder_8fb5db0491/folder_8fb5db0491.svg",
           "children": []
         },
         {
           "label": "Житлові програми для ветеранів",
           "href": "/veterans/housing-programs/",
-          "color": "#503334",
+          "color": "#47515A",
           "icon": "https://storage.googleapis.com/b-legal-navigator/house_0d8883a89d/house_0d8883a89d.png",
           "children": []
         },
         {
           "label": "Регіональні програми",
           "href": "/veterans/regions/",
-          "color": "#493B5A",
+          "color": "#434A3A",
           "icon": "https://storage.googleapis.com/b-legal-navigator/3d_icons_12_73ccc3b9d9/3d_icons_12_73ccc3b9d9.png",
           "children": []
         },
         {
           "label": "Компенсація за ЖКП та земельні ділянки",
           "href": "/veterans/compensation-and-land-plots/",
-          "color": "#61523A",
+          "color": "#383C3B",
           "icon": "https://storage.googleapis.com/b-legal-navigator/fire_416ec30711/fire_416ec30711.png",
           "children": []
         },
         {
           "label": "Медична допомога",
           "href": "/veterans/medical/",
-          "color": "#686F4E",
+          "color": "#37332E",
           "icon": "https://storage.googleapis.com/b-legal-navigator/3d_icons_7_b4bda39865/3d_icons_7_b4bda39865.png",
           "children": []
         },
         {
           "label": "Сервісний навігатор",
           "href": "/veterans/navigation/",
-          "color": "#1C3D5B",
+          "color": "#151D23",
           "icon": "https://storage.googleapis.com/b-legal-navigator/glass_1_0532eeaf2b/glass_1_0532eeaf2b.png",
           "children": []
         }
@@ -371,35 +371,35 @@
         {
           "label": "Кроки після звільнення з полону",
           "href": "/pow/first/",
-          "color": "#B29069",
+          "color": "#686F4E",
           "icon": "https://storage.googleapis.com/b-legal-navigator/plyus_1_f40984b727/plyus_1_f40984b727.png",
           "children": []
         },
         {
           "label": "Документи",
           "href": "/pow/documents/",
-          "color": "#908F8B",
+          "color": "#61523A",
           "icon": "https://storage.googleapis.com/b-legal-navigator/3d_icons2_3_0e74c1168a/3d_icons2_3_0e74c1168a.png",
           "children": []
         },
         {
           "label": "ВЛК та ЕКОПФО",
           "href": "/pow/evaluation/",
-          "color": "#61523A",
+          "color": "#503334",
           "icon": "https://storage.googleapis.com/b-legal-navigator/trikutnik_4_d72b3b05fd/trikutnik_4_d72b3b05fd.png",
           "children": []
         },
         {
           "label": "Виплати ",
           "href": "/pow/payout/",
-          "color": "#686F4E",
+          "color": "#47515A",
           "icon": "https://storage.googleapis.com/b-legal-navigator/3d_icons_12_73ccc3b9d9/3d_icons_12_73ccc3b9d9.png",
           "children": []
         },
         {
           "label": "Корисні контакти",
           "href": "/pow/contacts/",
-          "color": "#503334",
+          "color": "#434A3A",
           "icon": "https://storage.googleapis.com/b-legal-navigator/replika_2_e9616d4285/replika_2_e9616d4285.png",
           "children": []
         }
@@ -413,35 +413,35 @@
         {
           "label": "Родини полонених",
           "href": "/family/captives/",
-          "color": "#908F8B",
+          "color": "#686F4E",
           "icon": "https://storage.googleapis.com/b-legal-navigator/arrow_7dc0941587/arrow_7dc0941587.svg",
           "children": []
         },
         {
           "label": "Родини зниклих безвісти",
           "href": "/family/family-of-missing/",
-          "color": "#503334",
+          "color": "#61523A",
           "icon": "https://storage.googleapis.com/b-legal-navigator/military_a0abd59b90/military_a0abd59b90.svg",
           "children": []
         },
         {
           "label": "Родини загиблих",
           "href": "/family/family-of-fallen/",
-          "color": "#61523A",
+          "color": "#503334",
           "icon": "https://storage.googleapis.com/b-legal-navigator/treatment_b5a48a52c9/treatment_b5a48a52c9.svg",
           "children": []
         },
         {
           "label": "Родини чинних військових",
           "href": "/family/family-military/",
-          "color": "#B29069",
+          "color": "#47515A",
           "icon": "https://storage.googleapis.com/b-legal-navigator/folder_8fb5db0491/folder_8fb5db0491.svg",
           "children": []
         },
         {
           "label": "Родини ветеранів",
           "href": "/family/family-of-veteran/",
-          "color": "#686F4E",
+          "color": "#434A3A",
           "icon": "https://storage.googleapis.com/b-legal-navigator/check_6f7bfbb072/check_6f7bfbb072.svg",
           "children": []
         }

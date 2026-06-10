@@ -126,6 +126,11 @@ header .css-zfqabr a[href*="foreigners.navigator"] .header-foreigners-link__icon
   flex-shrink: 0;
 }
 
+header .internal-article-link__sr-only,
+header .internal-article-external-link__icon {
+  display: none !important;
+}
+
 header .css-1bgjytp {
   padding-left: var(--site-gutter) !important;
   padding-right: var(--site-gutter) !important;
@@ -181,16 +186,10 @@ header .header-search-btn img {
   color: #000000;
 }
 
-header .header-search-btn:hover {
-  color: #7d7d7d;
-  opacity: 0.8;
-  outline: none;
-}
-
+header .header-search-btn:hover,
 header .header-search-btn:focus-visible {
   color: #7d7d7d;
   opacity: 0.8;
-  outline: none;
 }
 
 @media (min-width: 1280px) {

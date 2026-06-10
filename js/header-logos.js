@@ -209,7 +209,9 @@
   function updateForeignersLink() {
     document.querySelectorAll('header a[href*="foreigners.navigator"]').forEach(function (link) {
       link.classList.add("css-bho8e5");
-      link.classList.remove("css-clvzh3");
+      link.classList.remove("css-clvzh3", "internal-article-external-link");
+      link.removeAttribute("target");
+      link.removeAttribute("rel");
       link.querySelectorAll("svg").forEach(function (svg) {
         svg.remove();
       });
@@ -219,7 +221,9 @@
         icon &&
         label &&
         label.textContent.trim() === FOREIGNERS_LABEL &&
-        icon.getAttribute("width") === "18"
+        icon.getAttribute("width") === "18" &&
+        !link.querySelector(".internal-article-link__sr-only") &&
+        !link.querySelector(".internal-article-external-link__icon")
       ) {
         return;
       }

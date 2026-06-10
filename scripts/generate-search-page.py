@@ -30,8 +30,8 @@ SEARCH_MARKUP = """
 
 
 def upsert_assets(soup: BeautifulSoup) -> None:
-    css_href = "/css/site-search.css?v=7"
-    app_css_href = "/css/app-search.css?v=1"
+    css_href = "/css/site-search.css?v=8"
+    app_css_href = "/css/app-search.css?v=2"
     js_href = "/js/site-search.js?v=6"
 
     existing_css = soup.select_one('link[href*="site-search.css"]')

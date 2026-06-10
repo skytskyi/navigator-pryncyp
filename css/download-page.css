@@ -150,7 +150,7 @@
   text-align: center !important;
   font-size: 12px !important;
   line-height: 1.4;
-  color: #6b6a6a;
+  color: var(--site-text-muted-color, #616161);
 }
 
 .internal-page-shell--download .internal-article-toc,

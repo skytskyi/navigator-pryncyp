@@ -31,7 +31,7 @@
   margin: 20px 0 0;
   font-size: 14px;
   line-height: 1.5;
-  color: #6b6a6a;
+  color: var(--site-text-muted-color, #616161);
 }
 
 .site-search-page__meta.is-hidden,

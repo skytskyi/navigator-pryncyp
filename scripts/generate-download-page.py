@@ -72,7 +72,7 @@ def download_card_markup() -> str:
 
 
 def upsert_download_css(soup: BeautifulSoup) -> None:
-    href = "/css/download-page.css?v=19"
+    href = "/css/download-page.css?v=20"
     existing = soup.select_one('link[href*="download-page.css"]')
     if existing:
         existing["href"] = href

@@ -232,7 +232,7 @@ a.css-1q51wqn:focus-visible > div {
 /* Поранені — same gray as «Поранені із системи МОУ» on /injured/ */
 a.css-1gooe0[href="/injured/"] > div,
 a.css-1q51wqn[href="/injured/"] > div {
-  background: #908f8b !important;
+  background: #61523a !important;
   cursor: pointer;
   box-sizing: border-box;
 }

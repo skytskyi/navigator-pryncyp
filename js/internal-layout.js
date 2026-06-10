@@ -3,7 +3,17 @@
   var TREE_CACHE_KEY = "site-nav-tree-v1";
   var HOME_LABEL = "Головна";
   var SUBCAT_LABEL = "Виберіть підкатегорію:";
-  var CARD_PALETTE = ["#686F4E", "#908F8B", "#61523A", "#503334", "#B29069", "#7D997B"];
+  var CARD_PALETTE = [
+    "#686F4E",
+    "#61523A",
+    "#503334",
+    "#47515A",
+    "#434A3A",
+    "#383C3B",
+    "#37332E",
+    "#151D23",
+    "#2B3A62",
+  ];
   var STANDALONE_PAGES = {
     "/about/": true,
     "/faq/": true,
@@ -579,13 +589,12 @@
 
   function enrichCards(cards) {
     return cards.map(function (card, index) {
-      var item = {
+      return {
         href: card.href,
         label: card.label,
         icon: card.icon || "",
-        color: card.color || CARD_PALETTE[index % CARD_PALETTE.length],
+        color: CARD_PALETTE[index % CARD_PALETTE.length],
       };
-      return item;
     });
   }
 

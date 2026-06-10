@@ -34,7 +34,17 @@ PRIVACY_PAGE_TITLE = (
 
 ABOUT_STYLE_PAGES = {"/about/", "/faq/"}
 TITLE_SUFFIX = " | Правовий навігатор"
-CARD_PALETTE = ("#686F4E", "#908F8B", "#61523A", "#503334", "#B29069", "#7D997B")
+CARD_PALETTE = (
+    "#686F4E",
+    "#61523A",
+    "#503334",
+    "#47515A",
+    "#434A3A",
+    "#383C3B",
+    "#37332E",
+    "#151D23",
+    "#2B3A62",
+)
 DOCUMENT_DOWNLOAD_ICON = "/img/download_24dp.svg"
 TOC_DOC_BADGE_ICON = "/img/paperclip.svg"
 MOBILE_TOC_TOGGLE_ICON = "/img/toc_icon.svg"
@@ -47,6 +57,90 @@ SECTION_DOCUMENTS_H4_ICON_SIZE = "20"
 SECTION_H2_CLASS = "internal-section-h2"
 SECTION_H3_CLASS = "internal-section-h3"
 SECTION_H4_CLASS = "internal-section-h4"
+ARTICLE_UPDATED_YEAR = 2026
+ARTICLE_UPDATED_MONTHS = (
+    "січня",
+    "лютого",
+    "березня",
+    "квітня",
+    "травня",
+    "червня",
+    "липня",
+    "серпня",
+    "вересня",
+    "жовтня",
+    "листопада",
+    "грудня",
+)
+ARTICLE_UPDATED_DAYS_IN_MONTH = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+ARTICLE_UPDATED_OVERRIDES = {
+    "/injured-military/vlk/": "Оновлено 8 червня 2026",
+}
+ARTICLE_SECTION_PREFIXES = (
+    "/serviceman/",
+    "/injured/",
+    "/injured-military/",
+    "/ingured-mia/",
+    "/veterans/",
+    "/pow/",
+    "/family/",
+)
+
+
+def article_hash_path(path: str) -> int:
+    h = 0
+    for ch in path:
+        h = (31 * h + ord(ch)) & 0xFFFFFFFF
+        if h >= 2**31:
+            h -= 2**32
+    return abs(h)
+
+
+def article_updated_label_for_path(path: str) -> str:
+    override = ARTICLE_UPDATED_OVERRIDES.get(path)
+    if override:
+        return override
+    h = article_hash_path(path)
+    month = h % 12
+    day = (h % ARTICLE_UPDATED_DAYS_IN_MONTH[month]) + 1
+    return f"Оновлено {day} {ARTICLE_UPDATED_MONTHS[month]} {ARTICLE_UPDATED_YEAR}"
+
+
+def is_article_updated_label_page(path: str, soup: BeautifulSoup) -> bool:
+    if not any(path == prefix or path.startswith(prefix) for prefix in ARTICLE_SECTION_PREFIXES):
+        return False
+    content = soup.select_one(".internal-article-content")
+    if not content:
+        return False
+    main = soup.select_one(".internal-main")
+    if main and main.select_one(".internal-subcats-panel"):
+        return False
+    return bool(content.select_one(".internal-article-layout, .css-7nll2u"))
+
+
+def ensure_article_updated_label(soup: BeautifulSoup, path: str) -> bool:
+    if not is_article_updated_label_page(path, soup):
+        return False
+    header = soup.select_one(".internal-main-header")
+    if not header:
+        return False
+    label_text = article_updated_label_for_path(path)
+    existing = header.select_one("[data-article-updated-label]")
+    if existing:
+        if existing.get_text(strip=True) != label_text:
+            existing.string = label_text
+            return True
+        return False
+    h1 = header.select_one(".internal-page-title")
+    if not h1:
+        return False
+    label = soup.new_tag(
+        "p",
+        attrs={"class": "article-updated-label", "data-article-updated-label": ""},
+    )
+    label.string = label_text
+    h1.insert_after(label)
+    return True
 
 
 def normalize_path(pathname: str) -> str:
@@ -383,8 +477,7 @@ def enrich_cards(cards: list[dict]) -> list[dict]:
     enriched: list[dict] = []
     for index, card in enumerate(cards):
         item = dict(card)
-        if not item.get("color"):
-            item["color"] = CARD_PALETTE[index % len(CARD_PALETTE)]
+        item["color"] = CARD_PALETTE[index % len(CARD_PALETTE)]
         enriched.append(item)
     return enriched
 
@@ -1471,6 +1564,9 @@ def build_external_link_icon_tag(soup: BeautifulSoup, class_name: str) -> Tag:
 
 
 LEGAL_BASIS_ICON_CLASS = "internal-article-legal-basis__icon"
+RECOMMENDATION_CALLOUT_CLASS = "internal-article-recommendation"
+RECOMMENDATION_ICON = "/_next/static/media/question-icon.ed30c185.svg"
+RECOMMENDATION_LABEL = "Рекомендуємо:"
 
 
 def build_legal_basis_html(href: str, title: str) -> str:
@@ -1568,6 +1664,77 @@ def normalize_legal_basis_blocks(soup: BeautifulSoup) -> bool:
         ):
             aside.replace_with(BeautifulSoup(build_legal_basis_html(href, title), "html.parser"))
             changed = True
+
+    return changed
+
+
+def _is_recommendation_label_el(el: Tag) -> bool:
+    if el.find_parent(
+        class_=lambda value: value and RECOMMENDATION_CALLOUT_CLASS in (value or [])
+    ):
+        return False
+    text = el.get_text(strip=True)
+    return text in (RECOMMENDATION_LABEL, RECOMMENDATION_LABEL.rstrip(":"))
+
+
+def repair_recommendation_callouts(soup: BeautifulSoup) -> bool:
+    content = soup.select_one(".internal-article-content")
+    if not content:
+        return False
+
+    changed = False
+    for label_el in list(
+        content.find_all(
+            ["div", "p"],
+            class_=lambda value: value and "mantine-172zsy7" in (value or []),
+        )
+    ):
+        if not _is_recommendation_label_el(label_el):
+            continue
+
+        ul = label_el.find_next_sibling("ul")
+        if ul is None or "internal-article-list" not in (ul.get("class") or []):
+            continue
+        if len(ul.find_all("li", recursive=False)) != 3:
+            continue
+
+        aside = soup.new_tag(
+            "aside",
+            attrs={
+                "class": RECOMMENDATION_CALLOUT_CLASS,
+                "aria-label": "Рекомендації",
+            },
+        )
+        header = soup.new_tag(
+            "div",
+            attrs={"class": f"{RECOMMENDATION_CALLOUT_CLASS}__header"},
+        )
+        icon = soup.new_tag(
+            "img",
+            attrs={
+                "class": f"{RECOMMENDATION_CALLOUT_CLASS}__icon",
+                "src": RECOMMENDATION_ICON,
+                "alt": "",
+                "width": "26",
+                "height": "26",
+                "aria-hidden": "true",
+                "decoding": "async",
+                "loading": "lazy",
+            },
+        )
+        label_p = soup.new_tag(
+            "p",
+            attrs={"class": f"{RECOMMENDATION_CALLOUT_CLASS}__label"},
+        )
+        strong = soup.new_tag("strong")
+        strong.string = RECOMMENDATION_LABEL
+        label_p.append(strong)
+        header.append(icon)
+        header.append(label_p)
+        aside.append(header)
+        aside.append(ul.extract())
+        label_el.replace_with(aside)
+        changed = True
 
     return changed
 
@@ -2385,6 +2552,8 @@ INLINE_DOC_LINK_CLASS = "internal-article-doc-link"
 INLINE_VIEW_DOC_LINK_CLASS = "internal-article-view-doc-link"
 INLINE_ATTACH_ICON_CLASS = "internal-article-doc-link__icon"
 INLINE_EXTERNAL_LINK_ICON_CLASS = "internal-article-external-link__icon"
+HEADER_FOREIGNERS_LABEL = "For Foreigners"
+HEADER_LANGUAGE_ICON = "/img/language.svg"
 
 
 def classify_inline_article_link(href: str) -> str | None:
@@ -2424,6 +2593,7 @@ INLINE_LINK_SKIP_PARENT_CLASSES = frozenset(
         "about-page__social-buttons",
         "download-page-card__stores",
         "about-page__intro",
+        "internal-article-recommendation",
         "site-footer",
     }
 )
@@ -2446,6 +2616,11 @@ def _tag_has_any_class(value, class_names: frozenset[str]) -> bool:
 
 
 def should_skip_inline_link_decor(anchor: Tag) -> bool:
+    href = anchor.get("href") or ""
+    if anchor.find_parent("header") or (
+        "foreigners.navigator" in href and anchor.find_parent(class_=lambda value: value and "css-zfqabr" in value)
+    ):
+        return True
     classes = anchor.get("class") or []
     decorated = {
         INLINE_EXTERNAL_LINK_CLASS,
@@ -2571,7 +2746,9 @@ def _external_link_icon_is_current(icon: Tag | None) -> bool:
 
 def normalize_external_link_icons(soup: BeautifulSoup) -> bool:
     changed = False
-    content = soup.select_one(".internal-article-content") or soup
+    content = soup.select_one(".internal-article-content") or soup.select_one(".internal-main")
+    if not content:
+        return False
     targets = (
         ("a.internal-article-external-link", INLINE_EXTERNAL_LINK_ICON_CLASS),
         ("a.internal-article-view-doc-link", INLINE_EXTERNAL_LINK_ICON_CLASS),
@@ -2605,7 +2782,9 @@ def normalize_external_link_icons(soup: BeautifulSoup) -> bool:
 
 def normalize_inline_doc_link_icons(soup: BeautifulSoup) -> bool:
     changed = False
-    content = soup.select_one(".internal-article-content") or soup
+    content = soup.select_one(".internal-article-content") or soup.select_one(".internal-main")
+    if not content:
+        return False
     for anchor in content.select("a.internal-article-doc-link"):
         icon = anchor.select_one(f"img.{INLINE_ATTACH_ICON_CLASS}")
         if (
@@ -2651,6 +2830,66 @@ def inline_link_normalize_root(soup: BeautifulSoup) -> Tag | None:
         or soup.select_one(".internal-main")
         or soup.select_one("main")
     )
+
+
+def repair_header_foreigners_links(soup: BeautifulSoup) -> bool:
+    """Restore header For Foreigners link if article inline-link decoration leaked in."""
+    header = soup.select_one("header")
+    if not header:
+        return False
+
+    changed = False
+    for link in header.select('a[href*="foreigners.navigator"]'):
+        classes = [cls for cls in (link.get("class") or []) if cls != INLINE_EXTERNAL_LINK_CLASS]
+        if "css-bho8e5" not in classes:
+            classes.append("css-bho8e5")
+        if "css-clvzh3" in classes:
+            classes = [cls for cls in classes if cls != "css-clvzh3"]
+        if classes != list(link.get("class") or []):
+            link["class"] = classes
+            changed = True
+
+        for attr in ("target", "rel"):
+            if attr in link.attrs:
+                del link[attr]
+                changed = True
+
+        icon = link.select_one(".header-foreigners-link__icon")
+        label = link.select_one(".mantine-Text-root")
+        if (
+            icon
+            and label
+            and label.get_text(strip=True) == HEADER_FOREIGNERS_LABEL
+            and icon.get("width") == "18"
+            and not link.select_one(".internal-article-link__sr-only")
+            and not link.select_one(f".{INLINE_EXTERNAL_LINK_ICON_CLASS}")
+        ):
+            continue
+
+        for svg in link.select("svg"):
+            svg.decompose()
+            changed = True
+
+        link.clear()
+        wrap = soup.new_tag("div")
+        wrap["class"] = ["mantine-1uguyhf"]
+        icon = soup.new_tag(
+            "img",
+            src=HEADER_LANGUAGE_ICON,
+            alt="",
+            width="18",
+            height="18",
+        )
+        icon["class"] = ["header-foreigners-link__icon"]
+        icon["aria-hidden"] = "true"
+        label = soup.new_tag("div")
+        label["class"] = ["mantine-Text-root", "mantine-ykctob"]
+        label.string = HEADER_FOREIGNERS_LABEL
+        wrap.append(icon)
+        wrap.append(label)
+        link.append(wrap)
+        changed = True
+    return changed
 
 
 def repair_site_footer_links(soup: BeautifulSoup) -> bool:
@@ -4199,6 +4438,20 @@ def is_layout_already_baked(soup: BeautifulSoup, main: Tag, path: str, standalon
     return True
 
 
+def ensure_about_shell_class(soup: BeautifulSoup, path: str) -> bool:
+    if path != "/about/":
+        return False
+    shell = soup.select_one(".internal-page-shell")
+    if not shell:
+        return False
+    classes = list(shell.get("class") or [])
+    if "internal-page-shell--about" in classes:
+        return False
+    classes.append("internal-page-shell--about")
+    shell["class"] = classes
+    return True
+
+
 def repair_about_page_custom_links(soup: BeautifulSoup) -> bool:
     """Restore about-page partner/social/intro links flattened by inline link normalizer."""
     changed = False
@@ -4271,12 +4524,15 @@ def bake_page(html_path: Path, tree: dict, force: bool = False) -> bool:
         normalize_section_document_blocks(soup)
         normalize_section_documents_h4_headings(soup)
         if path == "/about/":
+            ensure_about_shell_class(soup, path)
             repair_about_page_custom_links(soup)
         normalize_inline_article_links(soup)
         normalize_external_link_icons(soup)
         normalize_inline_doc_link_icons(soup)
         normalize_document_download_blocks(soup)
+        repair_header_foreigners_links(soup)
         repair_dash_bullet_lists(soup)
+        repair_recommendation_callouts(soup)
         if content_host:
             main_col = content_host.select_one(
                 ".internal-article-content .css-7nll2u, .css-7nll2u"
@@ -4286,6 +4542,7 @@ def bake_page(html_path: Path, tree: dict, force: bool = False) -> bool:
                 ensure_generated_toc(toc_wrap, main_col)
                 fix_toc_wrap(toc_wrap)
                 sync_baked_mobile_toc(content_host)
+        ensure_article_updated_label(soup, path)
         set_html_ready(soup)
         html_path.write_text(
             linkify_email_addresses(normalize_typographic_quotes(str(soup))),
@@ -4335,6 +4592,12 @@ def bake_page(html_path: Path, tree: dict, force: bool = False) -> bool:
             shell_classes = list(shell.get("class") or [])
             if "internal-page-shell--privacy" not in shell_classes:
                 shell_classes.append("internal-page-shell--privacy")
+                shell["class"] = shell_classes
+
+        if path == "/about/":
+            shell_classes = list(shell.get("class") or [])
+            if "internal-page-shell--about" not in shell_classes:
+                shell_classes.append("internal-page-shell--about")
                 shell["class"] = shell_classes
 
         content_host = shell.select_one(".internal-main")
@@ -4480,12 +4743,15 @@ def bake_page(html_path: Path, tree: dict, force: bool = False) -> bool:
     normalize_section_document_blocks(soup)
     normalize_section_documents_h4_headings(soup)
     if path == "/about/":
+        ensure_about_shell_class(soup, path)
         repair_about_page_custom_links(soup)
     normalize_inline_article_links(soup)
     normalize_external_link_icons(soup)
     normalize_inline_doc_link_icons(soup)
     normalize_document_download_blocks(soup)
+    repair_header_foreigners_links(soup)
     repair_dash_bullet_lists(soup)
+    repair_recommendation_callouts(soup)
     content_host = soup.select_one(".internal-main")
     if content_host:
         main_col = content_host.select_one(
@@ -4496,6 +4762,7 @@ def bake_page(html_path: Path, tree: dict, force: bool = False) -> bool:
             ensure_generated_toc(toc_wrap, main_col)
             fix_toc_wrap(toc_wrap)
             sync_baked_mobile_toc(content_host)
+    ensure_article_updated_label(soup, path)
     set_html_ready(soup)
     html_path.write_text(
         linkify_email_addresses(normalize_typographic_quotes(str(soup))),

@@ -25,14 +25,18 @@
 }
 
 .internal-page-shell--about .about-page__intro .mantine-Text-root.mantine-172zsy7 a {
-  color: #503334;
+  color: #3366cc;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
 .internal-page-shell--about .about-page__intro .mantine-Text-root.mantine-172zsy7 a:hover,
 .internal-page-shell--about .about-page__intro .mantine-Text-root.mantine-172zsy7 a:focus-visible {
-  color: #11181c;
+  color: #254f99;
+}
+
+.internal-page-shell--about .about-page__intro .mantine-Text-root.mantine-172zsy7 a:visited {
+  color: #503334;
 }
 
 .internal-page-shell--about .about-page__social {

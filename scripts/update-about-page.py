@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup, NavigableString, Tag
 ROOT = Path(__file__).resolve().parent.parent
 ABOUT_PATH = ROOT / "about" / "index.html"
 PAGE_TITLE = "Про нас"
-ABOUT_CSS = '<link href="/css/about-page.css?v=4" rel="stylesheet"/>'
+ABOUT_CSS = '<link href="/css/about-page.css?v=6" rel="stylesheet"/>'
 
 SOCIAL_LINKS = (
     ("https://www.facebook.com/pryncypua", "Facebook", "/img/facebook.svg"),
@@ -28,13 +28,13 @@ PARTNERS = (
     ),
 )
 PARTNER_ICON = "/img/Arrow_45.svg"
-DOWNLOAD_CSS = '<link href="/css/download-page.css?v=19" rel="stylesheet"/>'
+DOWNLOAD_CSS = '<link href="/css/download-page.css?v=20" rel="stylesheet"/>'
 
 
 def upsert_about_css(soup: BeautifulSoup) -> None:
     existing = soup.select_one('link[href*="about-page.css"]')
     if existing:
-        existing["href"] = "/css/about-page.css?v=4"
+        existing["href"] = "/css/about-page.css?v=6"
     else:
         internal_css = soup.select_one('link[href*="internal-layout.css"]')
         tag = BeautifulSoup(ABOUT_CSS, "html.parser")
@@ -45,7 +45,7 @@ def upsert_about_css(soup: BeautifulSoup) -> None:
 
     download_css = soup.select_one('link[href*="download-page.css"]')
     if download_css:
-        download_css["href"] = "/css/download-page.css?v=19"
+        download_css["href"] = "/css/download-page.css?v=20"
     else:
         about_css = soup.select_one('link[href*="about-page.css"]')
         tag = BeautifulSoup(DOWNLOAD_CSS, "html.parser")
