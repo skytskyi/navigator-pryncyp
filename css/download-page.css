@@ -119,6 +119,12 @@
   flex-shrink: 0;
 }
 
+@media (max-width: 959px) {
+  .download-page-card__qr {
+    display: none !important;
+  }
+}
+
 .download-page-card__qr-group {
   display: flex;
   flex-direction: column;

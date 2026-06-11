@@ -7,14 +7,16 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-CSS_TAG = '<link rel="stylesheet" href="/css/header-logos.css?v=24"/>'
-GLOBAL_CSS_TAG = '<link rel="stylesheet" href="/css/site-global.css?v=4"/>'
-MOBILE_CSS_TAG = '<link rel="stylesheet" href="/css/mobile-menu.css?v=40"/>'
+CSS_TAG = '<link rel="stylesheet" href="/css/header-logos.css?v=33"/>'
+GLOBAL_CSS_TAG = '<link rel="stylesheet" href="/css/site-global.css?v=6"/>'
+MOBILE_CSS_TAG = '<link rel="stylesheet" href="/css/mobile-menu.css?v=44"/>'
 HEADER_CRITICAL_STYLE = (
     '  <style id="header-critical">'
     "header .css-1bgjytp.mantine-ahbyky,header .css-1bgjytp.mantine-sel6jv{background:#fff!important;opacity:1!important}"
     "header .site-header-logos{display:flex!important;align-items:center;gap:12px;flex-shrink:0;min-height:30px;min-width:280px}"
     "header .site-header-logos img{display:block!important;height:30px!important;width:auto!important;max-width:none!important}"
+    "@media (max-width:767px){header .site-header-logos{min-height:26px;min-width:0!important;flex-shrink:1;gap:8px}header .site-header-logos img{height:26px!important}}"
+    "@media (max-width:374px){header .site-header-logos img{height:22px!important}}"
     "header img[alt=logo],header a:has(>img[alt=logo]){display:none!important}"
     "header .mantine-6bln36,header img[alt=search],header .mantine-us64po{display:none!important}"
     ".mantine-Drawer-body .mantine-6bln36,.mantine-Drawer-body img[alt=search],.mantine-Drawer-body .mantine-us64po{display:none!important}"
@@ -28,8 +30,8 @@ LOGO_PRELOAD = (
 )
 PERSIST_SCRIPT = '<script src="/js/header-persist.js?v=2"></script>'
 PATCH_RUNTIME_HEAD = '<script src="/js/patch-runtime.js?v=5"></script>'
-JS_TAG = '<script src="/js/header-logos.js?v=17"></script>'
-MOBILE_JS_TAG = '<script src="/js/mobile-menu.js?v=31"></script>'
+JS_TAG = '<script src="/js/header-logos.js?v=18"></script>'
+MOBILE_JS_TAG = '<script src="/js/mobile-menu.js?v=34"></script>'
 BODY_PERSIST_RE = re.compile(r"<body>", re.IGNORECASE)
 
 
@@ -110,7 +112,7 @@ def upsert_global_css(text: str) -> tuple[str, bool]:
     if "site-global.css" in text:
         new_text = re.sub(
             r'href="/css/site-global\.css\?v=\d+"',
-            'href="/css/site-global.css?v=4"',
+            'href="/css/site-global.css?v=6"',
             text,
         )
         return new_text, new_text != text
@@ -155,7 +157,7 @@ def upsert_mobile_assets(text: str) -> tuple[str, bool]:
     else:
         new_text = re.sub(
             r'href="/css/mobile-menu\.css\?v=\d+"',
-            'href="/css/mobile-menu.css?v=40"',
+            'href="/css/mobile-menu.css?v=44"',
             text,
         )
         if new_text != text:
@@ -176,7 +178,7 @@ def upsert_mobile_assets(text: str) -> tuple[str, bool]:
     else:
         new_text = re.sub(
             r'src="/js/mobile-menu\.js\?v=\d+"',
-            'src="/js/mobile-menu.js?v=31"',
+            'src="/js/mobile-menu.js?v=34"',
             text,
         )
         if new_text != text:
@@ -209,7 +211,7 @@ def main() -> None:
 
         new_text = re.sub(
             r'href="/css/header-logos\.css\?v=\d+"',
-            'href="/css/header-logos.css?v=24"',
+            'href="/css/header-logos.css?v=33"',
             text,
         )
         if new_text != text:
@@ -219,7 +221,7 @@ def main() -> None:
 
         new_text = re.sub(
             r'src="/js/header-logos\.js\?v=\d+"',
-            'src="/js/header-logos.js?v=17"',
+            'src="/js/header-logos.js?v=18"',
             text,
         )
         if new_text != text:

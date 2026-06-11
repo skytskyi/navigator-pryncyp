@@ -1,5 +1,4 @@
 (function () {
-  var PRYNCYP_URL = "https://www.pryncyp.org/";
   var NAVIGATOR_LOGO = "/img/Logo_navigator.png";
   var PRYNCYP_LOGO = "/img/Logo_pryncyp.png";
   var FOREIGNERS_LABEL = "For Foreigners";
@@ -23,26 +22,27 @@
   var headerObserver = null;
   var headerPatchFrame = null;
 
+  function homeHref() {
+    return typeof siteUrl === "function" ? siteUrl("/") : "/";
+  }
+
   function logosHtml() {
     return (
-      '<div class="site-header-logos" style="display:flex !important;align-items:center;gap:12px;flex-shrink:0;">' +
-      '<a href="/">' +
+      '<div class="site-header-logos" style="display:flex !important;align-items:center;flex-shrink:0;">' +
+      '<a class="site-header-logos__link" href="' +
+      homeHref() +
+      '">' +
       '<img alt="Правовий навігатор" height="30" decoding="async" ' +
       'style="height:30px;width:auto;display:block !important" src="' +
       NAVIGATOR_LOGO +
       '"/>' +
-      "</a>" +
-      '<span aria-hidden="true" style="width:1px;height:30px;background-color:#D9D9D9;' +
+      '<span aria-hidden="true" class="site-header-logos__divider" style="width:1px;height:30px;background-color:#D9D9D9;' +
       'flex-shrink:0;display:block"></span>' +
-      '<a href="' +
-      PRYNCYP_URL +
-      '" target="_blank" rel="noopener noreferrer">' +
       '<img alt="Принцип" height="30" decoding="async" ' +
       'style="height:30px;width:auto;display:block !important" src="' +
       PRYNCYP_LOGO +
       '"/>' +
-      "</a>" +
-      "</div>"
+      "</a></div>"
     );
   }
 
@@ -67,8 +67,12 @@
     if (!node || !node.classList || !node.classList.contains("site-header-logos")) {
       return false;
     }
-    var nav = node.querySelector('img[alt="Правовий навігатор"]');
-    var pry = node.querySelector('img[alt="Принцип"]');
+    var link = node.querySelector(".site-header-logos__link");
+    if (!link) {
+      return false;
+    }
+    var nav = link.querySelector('img[alt="Правовий навігатор"]');
+    var pry = link.querySelector('img[alt="Принцип"]');
     if (!nav || !pry) return false;
     var navSrc = nav.getAttribute("src") || nav.src || "";
     var prySrc = pry.getAttribute("src") || pry.src || "";
@@ -139,7 +143,9 @@
   function fixHeaderDividers() {
     var style =
       "width:1px;height:30px;background-color:#D9D9D9;flex-shrink:0;display:block;align-self:center;";
-    document.querySelectorAll("header .site-header-logos > span[aria-hidden=\"true\"]").forEach(function (el) {
+    document.querySelectorAll(
+      'header .site-header-logos__divider, header .site-header-logos > span[aria-hidden="true"]'
+    ).forEach(function (el) {
       el.setAttribute("style", style);
     });
     document.querySelectorAll("header .css-1qav3gh").forEach(function (el) {

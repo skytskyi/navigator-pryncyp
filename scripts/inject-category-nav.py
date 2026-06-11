@@ -8,7 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 CSS_TAG = '<link rel="stylesheet" href="/css/category-nav.css?v=13"/>'
-JS_TAG = '<script src="/js/category-nav.js?v=15"></script>'
+JS_TAG = '<script src="/js/category-nav.js?v=17"></script>'
 
 
 def is_homepage(path: Path) -> bool:

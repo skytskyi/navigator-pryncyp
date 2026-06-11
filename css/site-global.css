@@ -4,6 +4,30 @@
   --site-focus-ring-width: 2px;
   --site-focus-ring-color: #000000;
   --site-focus-ring-offset: 2px;
+  --site-gutter: 16px;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --site-gutter: 12px;
+  }
+
+  html {
+    scrollbar-gutter: auto;
+    overflow-x: clip;
+  }
+}
+
+@media (min-width: 960px) {
+  :root {
+    --site-gutter: 24px;
+  }
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --site-gutter: 40px;
+  }
 }
 
 /* Reserve scrollbar width on every page to prevent header/menu layout shift. */

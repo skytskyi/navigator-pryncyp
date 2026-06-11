@@ -26,18 +26,15 @@ def depth_to_root(html_path: Path) -> int:
 def build_logos_block(prefix: str, home_href: str) -> str:
     img = f"{prefix}img/"
     return (
-        '<div class="site-header-logos" style="display:flex;align-items:center;gap:12px;">'
-        f'<a href="{home_href}">'
+        '<div class="site-header-logos" style="display:flex;align-items:center;">'
+        f'<a class="site-header-logos__link" href="{home_href}">'
         f'<img alt="Правовий навігатор" loading="lazy" height="30" decoding="async" '
         f'style="height:30px;width:auto;display:block" src="{img}Logo_navigator.png"/>'
-        f"</a>"
-        '<span aria-hidden="true" style="width:1px;height:30px;background-color:#D9D9D9;'
+        '<span aria-hidden="true" class="site-header-logos__divider" style="width:1px;height:30px;background-color:#D9D9D9;'
         'flex-shrink:0;display:block"></span>'
-        '<a href="https://www.pryncyp.org/" target="_blank" rel="noopener noreferrer">'
         f'<img alt="Принцип" loading="lazy" height="30" decoding="async" '
         f'style="height:30px;width:auto;display:block" src="{img}Logo_pryncyp.png"/>'
-        f"</a>"
-        "</div>"
+        f"</a></div>"
     )
 
 

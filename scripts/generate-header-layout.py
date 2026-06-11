@@ -16,9 +16,8 @@ FOREIGNERS_LABEL = "For Foreigners"
 LANGUAGE_ICON = "/img/language.svg"
 NAVIGATOR_LOGO = "/img/Logo_navigator.png"
 PRYNCYP_LOGO = "/img/Logo_pryncyp.png"
-PRYNCYP_URL = "https://www.pryncyp.org/"
 
-GLOBAL_NAV_PATHS = {"/about/", "/faq/", "/documents/"}
+GLOBAL_NAV_PATHS = {"/about/", "/faq/", "/documents/", "/download/", "/privacy-policy/"}
 
 CATEGORIES = [
     {
@@ -91,19 +90,16 @@ def get_active_category(path: str) -> dict | None:
 def logos_markup() -> str:
     return (
         f'<div class="site-header-logos" style="{LOGOS_STYLE}">'
-        f'<a href="/">'
+        f'<a class="site-header-logos__link" href="/">'
         f'<img alt="Правовий навігатор" width="132" height="30" decoding="async" '
         f'fetchpriority="high" loading="eager" '
         f'style="height:30px;width:auto;display:block !important" src="{NAVIGATOR_LOGO}"/>'
-        f"</a>"
-        '<span aria-hidden="true" style="width:1px;height:30px;background-color:#D9D9D9;'
+        '<span aria-hidden="true" class="site-header-logos__divider" style="width:1px;height:30px;background-color:#D9D9D9;'
         'flex-shrink:0;display:block"></span>'
-        f'<a href="{PRYNCYP_URL}" target="_blank" rel="noopener noreferrer">'
         f'<img alt="Принцип" width="132" height="30" decoding="async" '
         f'fetchpriority="high" loading="eager" '
         f'style="height:30px;width:auto;display:block !important" src="{PRYNCYP_LOGO}"/>'
-        f"</a>"
-        "</div>"
+        f"</a></div>"
     )
 
 
@@ -155,8 +151,11 @@ def is_old_logo_img(img: Tag) -> bool:
 def is_our_logos_block(node: Tag | None) -> bool:
     if not node or "site-header-logos" not in (node.get("class") or []):
         return False
-    nav = node.select_one('img[alt="Правовий навігатор"]')
-    pry = node.select_one('img[alt="Принцип"]')
+    link = node.select_one("a.site-header-logos__link")
+    if not link:
+        return False
+    nav = link.select_one('img[alt="Правовий навігатор"]')
+    pry = link.select_one('img[alt="Принцип"]')
     if not nav or not pry:
         return False
     nav_src = nav.get("src") or ""

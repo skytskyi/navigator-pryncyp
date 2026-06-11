@@ -32,7 +32,7 @@
       prefixes: ["/family"],
     },
   ];
-  var GLOBAL_NAV_PATHS = ["/about/", "/faq/", "/documents/"];
+  var GLOBAL_NAV_PATHS = ["/about/", "/faq/", "/documents/", "/download/", "/privacy-policy/"];
   var SIDEBAR_WIDTH = 275;
   var SIDEBAR_CONTENT_GAP = 40;
   var DEFAULT_SITE_GUTTER = 40;

@@ -28,7 +28,7 @@ PARTNERS = (
     ),
 )
 PARTNER_ICON = "/img/Arrow_45.svg"
-DOWNLOAD_CSS = '<link href="/css/download-page.css?v=20" rel="stylesheet"/>'
+DOWNLOAD_CSS = '<link href="/css/download-page.css?v=21" rel="stylesheet"/>'
 
 
 def upsert_about_css(soup: BeautifulSoup) -> None:
@@ -45,7 +45,7 @@ def upsert_about_css(soup: BeautifulSoup) -> None:
 
     download_css = soup.select_one('link[href*="download-page.css"]')
     if download_css:
-        download_css["href"] = "/css/download-page.css?v=20"
+        download_css["href"] = "/css/download-page.css?v=21"
     else:
         about_css = soup.select_one('link[href*="about-page.css"]')
         tag = BeautifulSoup(DOWNLOAD_CSS, "html.parser")

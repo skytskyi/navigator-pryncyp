@@ -1,6 +1,6 @@
 .site-footer {
   background: #e7e7e7;
-  padding: 12px 16px;
+  padding: 12px var(--site-gutter, 16px);
   box-sizing: border-box;
 }
 

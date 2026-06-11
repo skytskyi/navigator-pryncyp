@@ -4,6 +4,38 @@
   font-family: e-Ukraine, sans-serif;
 }
 
+body:has(.category-nav) .internal-page-shell.internal-page-shell--search,
+.internal-page-shell--search {
+  padding-top: 40px;
+}
+
+@media (max-width: 1279px) {
+  body:has(.category-nav) .internal-page-shell.internal-page-shell--search,
+  .internal-page-shell--search {
+    padding-top: 16px;
+  }
+
+  .internal-page-shell--search .internal-breadcrumbs-row--standalone:not(:has(.internal-breadcrumbs)) {
+    display: none;
+    margin-bottom: 0;
+  }
+
+  .internal-page-shell--search
+    .internal-main-header:has(
+      > .internal-breadcrumbs-row--standalone:not(:has(.internal-breadcrumbs))
+    )
+    .internal-page-title {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 960px) {
+  body:has(.category-nav) .internal-page-shell.internal-page-shell--search,
+  .internal-page-shell--search {
+    padding-top: 16px;
+  }
+}
+
 /* Match «Про нас»: main column + 275px TOC column + 40px gap */
 .internal-page-shell--search .internal-article-layout {
   display: flex;
@@ -176,6 +208,12 @@
 
 .internal-page-shell--search .internal-main-header .internal-page-title {
   margin-bottom: 24px;
+}
+
+@media (max-width: 767px) {
+  .internal-page-shell--search .internal-main-header .internal-page-title {
+    margin-bottom: 16px;
+  }
 }
 
 @media (max-width: 1279px) {

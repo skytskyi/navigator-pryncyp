@@ -40,6 +40,7 @@
   var navTree = null;
   var navTreePromise = null;
   var expandedManual = Object.create(null);
+  var expandedCategoryManual = Object.create(null);
   var staticDrawerRoot = null;
   var staticDrawerOpen = false;
   var staticDrawerListenersBound = false;
@@ -48,12 +49,11 @@
   var patchDrawerQueue = [];
   var lastSyncedPath = null;
 
-  var DRAWER_MENU_ITEMS = [
+  var SITE_DRAWER_ITEMS = [
     { href: "/about/", label: "Про нас" },
     { href: "/faq/", label: "FAQ" },
     { href: "/documents/", label: "Документи" },
-    { href: "/search/", label: "Пошук", icon: "/img/search.svg" },
-    { href: "/download/", label: "Завантажити додаток" },
+    { href: "/search/", label: "Пошук", icon: "/img/search.svg", iconAlt: "search" },
   ];
   var TREE_TOGGLE_ICON = "/img/arrow_down.svg";
 
@@ -259,52 +259,19 @@
     });
   }
 
-  function findActiveCategoryLink(content, activeId) {
-    if (!activeId) {
-      return null;
+  function isCategoryExpanded(categoryId, activeId) {
+    if (Object.prototype.hasOwnProperty.call(expandedCategoryManual, categoryId)) {
+      return expandedCategoryManual[categoryId];
     }
-
-    var linksRoot = content.querySelector(".mobile-menu-categories__links");
-    if (!linksRoot) {
-      return null;
-    }
-
-    var link = linksRoot.querySelector('[data-category-id="' + activeId + '"]');
-    if (link) {
-      return link;
-    }
-
-    for (var i = 0; i < CATEGORIES.length; i++) {
-      if (CATEGORIES[i].id === activeId) {
-        return linksRoot.querySelector('a[href="' + resolveSiteUrl(CATEGORIES[i].href) + '"]');
-      }
-    }
-
-    return null;
+    return categoryId === activeId;
   }
 
-  function placeMobileMenuTree(activeLink, existingTree, treeHtml) {
-    if (existingTree) {
-      if (existingTree.dataset.mobileMenuTreeHtml === treeHtml) {
-        if (existingTree.previousElementSibling !== activeLink) {
-          activeLink.insertAdjacentElement("afterend", existingTree);
-        }
-        return existingTree;
-      }
-
-      existingTree.outerHTML = treeHtml;
-      var tree = activeLink.nextElementSibling;
-      if (!tree || !tree.matches("[data-mobile-menu-tree]")) {
-        tree = activeLink.parentElement.querySelector("[data-mobile-menu-tree]");
-        if (tree && tree.previousElementSibling !== activeLink) {
-          activeLink.insertAdjacentElement("afterend", tree);
-        }
-      }
-      return tree;
+  function categoryHasTreeChildren(categoryId) {
+    if (!navTree) {
+      return true;
     }
-
-    activeLink.insertAdjacentHTML("afterend", treeHtml);
-    return activeLink.nextElementSibling;
+    var navCategory = findNavCategory(categoryId);
+    return !!(navCategory && navCategory.children && navCategory.children.length);
   }
 
   function shouldShowMobileMenuTree() {
@@ -322,39 +289,101 @@
       return;
     }
 
-    var existingTree = content.querySelector("[data-mobile-menu-tree]");
-
     if (!shouldShowMobileMenuTree()) {
-      if (existingTree) {
-        existingTree.remove();
-      }
+      removeMobileMenuTrees();
       return;
     }
-    var category = findNavCategory(activeId);
+
     var path = normalizePath(window.location.pathname);
-    var treeHtml = category ? mobileMenuTreeHtml(category, path) : "";
 
-    if (!treeHtml) {
-      if (existingTree) {
-        existingTree.remove();
+    content.querySelectorAll(".mobile-menu-category[data-category-id]").forEach(function (item) {
+      var categoryId = item.getAttribute("data-category-id");
+      var panel = item.querySelector("[data-category-panel]");
+      if (!panel) {
+        return;
       }
+
+      var isExpanded = isCategoryExpanded(categoryId, activeId);
+      panel.hidden = !isExpanded;
+      panel.classList.toggle("mobile-menu-category__panel--open", isExpanded);
+
+      var toggle = item.querySelector("[data-category-toggle]");
+      if (toggle) {
+        toggle.setAttribute("aria-expanded", isExpanded ? "true" : "false");
+        var icon = toggle.querySelector(".mobile-menu-category__toggle-icon");
+        if (icon) {
+          icon.classList.toggle("mobile-menu-category__toggle-icon--expanded", isExpanded);
+        }
+      }
+
+      var existingTree = panel.querySelector("[data-mobile-menu-tree]");
+      if (!isExpanded) {
+        if (existingTree) {
+          existingTree.remove();
+        }
+        return;
+      }
+
+      var navCategory = findNavCategory(categoryId);
+      var treeHtml = navCategory ? mobileMenuTreeHtml(navCategory, path) : "";
+      if (!treeHtml) {
+        if (existingTree) {
+          existingTree.remove();
+        }
+        return;
+      }
+
+      if (existingTree && existingTree.dataset.mobileMenuTreeHtml === treeHtml) {
+        bindMobileTreeToggles(existingTree);
+        if (categoryId === activeId) {
+          scrollActiveTreeLinkIntoView(existingTree);
+        }
+        return;
+      }
+
+      panel.innerHTML = treeHtml;
+      var tree = panel.querySelector("[data-mobile-menu-tree]");
+      if (tree) {
+        tree.dataset.mobileMenuTreeHtml = treeHtml;
+        bindMobileTreeToggles(tree);
+        if (categoryId === activeId) {
+          scrollActiveTreeLinkIntoView(tree);
+        }
+      }
+    });
+  }
+
+  function bindCategoryAccordionToggles(content, activeId) {
+    if (!content) {
       return;
     }
 
-    var activeLink = findActiveCategoryLink(content, activeId);
-    if (!activeLink) {
-      if (existingTree) {
-        existingTree.remove();
+    content.querySelectorAll("[data-category-toggle]").forEach(function (button) {
+      if (button.dataset.categoryToggleBound) {
+        return;
       }
-      return;
-    }
+      button.dataset.categoryToggleBound = "1";
+      button.addEventListener("click", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        var categoryId = this.getAttribute("data-category-toggle");
+        var currentlyExpanded = isCategoryExpanded(
+          categoryId,
+          activeId || (getActiveCategory() ? getActiveCategory().id : null)
+        );
 
-    var tree = placeMobileMenuTree(activeLink, existingTree, treeHtml);
-    if (tree) {
-      tree.dataset.mobileMenuTreeHtml = treeHtml;
-      bindMobileTreeToggles(tree);
-      scrollActiveTreeLinkIntoView(tree);
-    }
+        for (var i = 0; i < CATEGORIES.length; i++) {
+          expandedCategoryManual[CATEGORIES[i].id] = false;
+        }
+        expandedCategoryManual[categoryId] = !currentlyExpanded;
+
+        var drawerContent = this.closest(".mantine-w2f2ab");
+        var activeCategory = getActiveCategory();
+        withDrawerPatch(function () {
+          syncMobileMenuTree(drawerContent, activeCategory ? activeCategory.id : null);
+        });
+      });
+    });
   }
 
   function scrollActiveTreeLinkIntoView(treeRoot) {
@@ -372,34 +401,128 @@
     });
   }
 
-  function categoriesHtml(activeId) {
+  function categoriesAccordionHtml(activeId) {
+    var showTree = shouldShowMobileMenuTree();
     var html =
       '<div class="mobile-menu-categories" data-mobile-menu-categories="1">' +
-      '<div class="mobile-menu-categories__label">' +
-      LABEL +
-      "</div>" +
-      '<div class="mobile-menu-categories__links">';
+      '<div class="mobile-menu-categories__accordion" data-mobile-menu-accordion="1">';
 
     for (var i = 0; i < CATEGORIES.length; i++) {
       var category = CATEGORIES[i];
-      var className = "mobile-menu-categories__link";
-      if (category.id === activeId) {
-        className += " mobile-menu-categories__link--active";
+      var isActive = category.id === activeId;
+      var hasChildren = showTree && categoryHasTreeChildren(category.id);
+      var isExpanded = hasChildren && isCategoryExpanded(category.id, activeId);
+      var linkClass = "mobile-menu-category__link";
+      if (isActive) {
+        linkClass += " mobile-menu-category__link--active";
       }
+
       html +=
+        '<div class="mobile-menu-category" data-category-id="' +
+        category.id +
+        '">' +
+        '<div class="mobile-menu-category__header">' +
         '<a class="' +
-        className +
+        linkClass +
         '" href="' +
         escapeHtml(resolveSiteUrl(category.href)) +
         '" data-category-id="' +
         category.id +
         '">' +
-        category.label +
+        escapeHtml(category.label) +
         "</a>";
+
+      if (hasChildren) {
+        html +=
+          '<button type="button" class="mobile-menu-category__toggle" data-category-toggle="' +
+          category.id +
+          '" aria-expanded="' +
+          (isExpanded ? "true" : "false") +
+          '" aria-label="Розгорнути ' +
+          escapeHtml(category.label) +
+          '">' +
+          '<img class="mobile-menu-category__toggle-icon' +
+          (isExpanded ? " mobile-menu-category__toggle-icon--expanded" : "") +
+          '" src="' +
+          escapeHtml(treeToggleIconSrc()) +
+          '" alt="" width="12" height="12" aria-hidden="true" />' +
+          "</button>";
+      }
+
+      html += "</div>";
+
+      if (hasChildren) {
+        html +=
+          '<div class="mobile-menu-category__panel' +
+          (isExpanded ? " mobile-menu-category__panel--open" : "") +
+          '" data-category-panel="' +
+          category.id +
+          '"' +
+          (isExpanded ? "" : " hidden") +
+          "></div>";
+      }
+
+      html += "</div>";
     }
 
     html += "</div></div>";
     return html;
+  }
+
+  function drawerFooterHtml() {
+    var downloadHref = resolveSiteUrl("/download/");
+    return (
+      '<footer class="mobile-menu-drawer__footer" data-mobile-menu-footer="1">' +
+      '<a class="header-download-btn" href="' +
+      escapeHtml(downloadHref) +
+      '">' +
+      escapeHtml("Завантажити додаток") +
+      "</a>" +
+      '<a class="mobile-menu-foreigners-btn" href="https://foreigners.navigator.pryncyp.org">' +
+      '<img class="header-foreigners-link__icon" src="' +
+      languageIconSrc() +
+      '" width="18" height="18" alt="" aria-hidden="true"/>' +
+      "<span>" +
+      FOREIGNERS_LABEL +
+      "</span></a></footer>"
+    );
+  }
+
+  function buildDrawerContentHtml(activeId) {
+    var html =
+      '<section class="mobile-menu-section mobile-menu-section--site">' +
+      '<div class="mobile-menu-section__links" data-mobile-menu-site="1">';
+
+    for (var i = 0; i < SITE_DRAWER_ITEMS.length; i++) {
+      html += drawerMenuLinkHtml(SITE_DRAWER_ITEMS[i]);
+    }
+
+    html +=
+      "</div></section>" +
+      '<section class="mobile-menu-section mobile-menu-section--topics">' +
+      '<h2 class="mobile-menu-section__label">' +
+      LABEL +
+      "</h2>" +
+      categoriesAccordionHtml(activeId) +
+      "</section>" +
+      drawerFooterHtml();
+
+    return html;
+  }
+
+  function hasDrawerLayout(content) {
+    return !!(content && content.getAttribute("data-mobile-menu-layout") === "1");
+  }
+
+  function applyDrawerLayout(content, activeId) {
+    if (!content) {
+      return;
+    }
+
+    content.innerHTML = buildDrawerContentHtml(activeId);
+    content.setAttribute("data-mobile-menu-layout", "1");
+    reorderDrawerMenuIcons(content);
+    bindCategoryAccordionToggles(content, activeId);
   }
 
   function isNavigatorAccordionControl(control) {
@@ -457,27 +580,25 @@
         svg.remove();
       });
 
-      var inner = link.querySelector(".mobile-menu-item__inner, .mantine-1xkg0b8");
-      if (!inner) {
-        inner = document.createElement("span");
-        inner.className = "mantine-1xkg0b8 mobile-menu-item__inner";
-        link.textContent = "";
-        link.appendChild(inner);
-      } else {
-        inner.classList.add("mobile-menu-item__inner");
-      }
+      link.classList.remove("css-noumbc");
+      link.classList.add("mobile-menu-foreigners-btn");
 
-      var icon = inner.querySelector(".header-foreigners-link__icon");
-      var label = inner.querySelector(".mobile-menu-item__label");
-      if (icon && label && label.textContent.trim() === FOREIGNERS_LABEL) {
+      var icon = link.querySelector(".header-foreigners-link__icon");
+      var label = link.querySelector("span");
+      if (
+        link.classList.contains("mobile-menu-foreigners-btn") &&
+        icon &&
+        label &&
+        label.textContent.trim() === FOREIGNERS_LABEL
+      ) {
         return;
       }
 
-      inner.innerHTML =
+      link.innerHTML =
         '<img class="header-foreigners-link__icon" src="' +
         languageIconSrc() +
         '" width="18" height="18" alt="" aria-hidden="true"/>' +
-        '<span class="mobile-menu-item__label">' +
+        "<span>" +
         FOREIGNERS_LABEL +
         "</span>";
     });
@@ -608,101 +729,23 @@
   }
 
   function updateActiveLinks(block, activeId) {
-    block.querySelectorAll(".mobile-menu-categories__link").forEach(function (link) {
-      var href = link.getAttribute("href") || "";
-      var isActive = false;
-      for (var i = 0; i < CATEGORIES.length; i++) {
-        if (CATEGORIES[i].id === activeId && resolveSiteUrl(CATEGORIES[i].href) === href) {
-          isActive = true;
-          break;
-        }
-      }
-      if (isActive) {
-        link.classList.add("mobile-menu-categories__link--active");
-      } else {
-        link.classList.remove("mobile-menu-categories__link--active");
-      }
-    });
-  }
-
-  function markDrawerMenuSpacing(content) {
-    content.querySelectorAll('a.css-noumbc[href*="pryncyp_bot"]').forEach(function (link) {
-      link.classList.remove("mobile-menu-item--spaced-top");
-    });
-
-    content.querySelectorAll('a.css-noumbc[href="' + resolveSiteUrl("/about/") + '"]').forEach(function (link) {
-      link.classList.remove("mobile-menu-item--spaced-top");
-      if (!link.classList.contains("mobile-menu-item--about-top")) {
-        link.classList.add("mobile-menu-item--about-top");
-      }
-    });
-
-    content.querySelectorAll('a.css-noumbc[href="' + resolveSiteUrl("/faq/") + '"]').forEach(function (link) {
-      link.classList.remove("mobile-menu-item--spaced-top");
-      link.classList.remove("mobile-menu-item--about-top");
-      if (!link.classList.contains("mobile-menu-item--menu-gap")) {
-        link.classList.add("mobile-menu-item--menu-gap");
-      }
-    });
-
-    content.querySelectorAll('a.css-noumbc[href="' + resolveSiteUrl("/documents/") + '"]').forEach(function (link) {
-      if (!link.classList.contains("mobile-menu-item--menu-gap")) {
-        link.classList.add("mobile-menu-item--menu-gap");
-      }
-    });
-
-    content.querySelectorAll('a.css-noumbc[href="' + resolveSiteUrl("/search/") + '"]').forEach(function (link) {
-      if (!link.classList.contains("mobile-menu-item--menu-gap")) {
-        link.classList.add("mobile-menu-item--menu-gap");
-      }
-    });
-
-    content.querySelectorAll('a.header-download-btn[href="' + resolveSiteUrl("/download/") + '"]').forEach(function (link) {
-      link.classList.remove("css-noumbc");
-      if (!link.classList.contains("mobile-menu-item--spaced-top")) {
-        link.classList.add("mobile-menu-item--spaced-top");
-      }
-    });
-
-    content.querySelectorAll('a.css-noumbc[href="' + resolveSiteUrl("/download/") + '"]').forEach(function (link) {
-      link.classList.remove("css-noumbc");
-      link.classList.add("header-download-btn");
-      if (!link.classList.contains("mobile-menu-item--spaced-top")) {
-        link.classList.add("mobile-menu-item--spaced-top");
-      }
-    });
-
-    var foreignersLink = content.querySelector('a[href*="foreigners.navigator"]');
-    if (!foreignersLink) {
+    if (!block) {
       return;
     }
 
-    var foreignersWrap =
-      foreignersLink.closest(".mantine-Stack-root") || foreignersLink;
-    if (!foreignersWrap.classList.contains("mobile-menu-item--spaced-top")) {
-      foreignersWrap.classList.add("mobile-menu-item--spaced-top");
-    }
+    block.querySelectorAll(".mobile-menu-category__link").forEach(function (link) {
+      var categoryId = link.getAttribute("data-category-id");
+      if (categoryId === activeId) {
+        link.classList.add("mobile-menu-category__link--active");
+      } else {
+        link.classList.remove("mobile-menu-category__link--active");
+      }
+    });
   }
 
   function drawerMenuLinkHtml(item) {
     var itemHref = resolveSiteUrl(item.href);
-
-    if (item.href === "/download/") {
-      return (
-        '<a class="header-download-btn mobile-menu-item--spaced-top" href="' +
-        escapeHtml(itemHref) +
-        '">' +
-        escapeHtml(item.label) +
-        "</a>"
-      );
-    }
-
     var className = "css-noumbc";
-    if (item.href === "/about/") {
-      className += " mobile-menu-item--about-top";
-    } else if (item.href === "/faq/" || item.href === "/documents/" || item.href === "/search/") {
-      className += " mobile-menu-item--menu-gap";
-    }
 
     var html =
       '<a class="' + className + '" href="' + escapeHtml(itemHref) + '"';
@@ -714,7 +757,7 @@
     if (item.icon) {
       var iconSize = item.href === "/search/" ? 18 : 28;
       html +=
-        '<span class="mantine-1xkg0b8">' +
+        '<span class="mantine-1xkg0b8 mobile-menu-item__inner">' +
         '<img alt="' +
         escapeHtml(item.iconAlt || "") +
         '" src="' +
@@ -725,7 +768,7 @@
         iconSize +
         '" />';
       if (item.label) {
-        html += escapeHtml(item.label);
+        html += '<span class="mobile-menu-item__label">' + escapeHtml(item.label) + "</span>";
       }
       html += "</span>";
     } else {
@@ -737,21 +780,7 @@
   }
 
   function drawerMenuLinksHtml() {
-    var html = "";
-    for (var i = 0; i < DRAWER_MENU_ITEMS.length; i++) {
-      html += drawerMenuLinkHtml(DRAWER_MENU_ITEMS[i]);
-    }
-    html +=
-      '<div class="mantine-Stack-root">' +
-      '<a class="css-noumbc" href="https://foreigners.navigator.pryncyp.org">' +
-      '<span class="mantine-1xkg0b8 mobile-menu-item__inner">' +
-      '<img class="header-foreigners-link__icon" src="' +
-      languageIconSrc() +
-      '" width="18" height="18" alt="" aria-hidden="true"/>' +
-      '<span class="mobile-menu-item__label">' +
-      FOREIGNERS_LABEL +
-      "</span></span></a></div>";
-    return html;
+    return buildDrawerContentHtml(getActiveCategory() ? getActiveCategory().id : null);
   }
 
   function setBurgerOpened(opened) {
@@ -814,6 +843,7 @@
 
   function resetTreeExpansionState() {
     expandedManual = Object.create(null);
+    expandedCategoryManual = Object.create(null);
   }
 
   function refreshDrawerNavigation(drawerBody) {
@@ -834,14 +864,19 @@
 
     var activeCategory = getActiveCategory();
     var activeId = activeCategory ? activeCategory.id : null;
-    var existing = content.querySelector("[data-mobile-menu-categories]");
+    var categoriesBlock = content.querySelector("[data-mobile-menu-categories]");
 
-    if (existing) {
-      updateActiveLinks(existing, activeId);
+    if (categoriesBlock) {
+      updateActiveLinks(categoriesBlock, activeId);
     }
 
     fetchNavTree().then(function () {
       withDrawerPatch(function () {
+        if (!hasDrawerLayout(content)) {
+          applyDrawerLayout(content, activeId);
+        } else {
+          bindCategoryAccordionToggles(content, activeId);
+        }
         syncMobileMenuTree(content, activeId);
       });
     });
@@ -880,7 +915,7 @@
       '" width="24" height="24" />' +
       "</button></div>" +
       '<div class="mantine-Drawer-body static-mobile-drawer__body">' +
-      '<div class="mantine-w2f2ab">' +
+      '<div class="mantine-w2f2ab" data-mobile-menu-layout="1">' +
       drawerMenuLinksHtml() +
       "</div></div></div></div>";
 
@@ -943,28 +978,24 @@
     }
 
     removeNavigatorAccordion(content);
-    reorderDrawerMenuIcons(content);
-    markDrawerMenuSpacing(content);
 
     var activeCategory = getActiveCategory();
     var activeId = activeCategory ? activeCategory.id : null;
-    var existing = content.querySelector("[data-mobile-menu-categories]");
 
-    if (!existing) {
-      var firstLink = content.querySelector("a.css-noumbc");
-      var wrap = document.createElement("div");
-      wrap.innerHTML = categoriesHtml(activeId);
-      var block = wrap.firstElementChild;
-      if (firstLink) {
-        content.insertBefore(block, firstLink);
-      } else {
-        content.insertBefore(block, content.firstChild);
-      }
-    } else {
-      updateActiveLinks(existing, activeId);
-    }
+    fetchNavTree().then(function () {
+      withDrawerPatch(function () {
+        if (!hasDrawerLayout(content)) {
+          applyDrawerLayout(content, activeId);
+        } else {
+          reorderDrawerMenuIcons(content);
+          updateActiveLinks(content.querySelector("[data-mobile-menu-categories]"), activeId);
+          bindCategoryAccordionToggles(content, activeId);
+        }
+        ensureForeignersDrawerLink(drawerBody);
+        syncMobileMenuTree(content, activeId);
+      });
+    });
 
-    refreshDrawerNavigation(drawerBody);
     return true;
   }
 
@@ -1061,13 +1092,17 @@
     }
     mobileTreeResizeTimer = window.setTimeout(function () {
       mobileTreeResizeTimer = null;
-      if (!shouldShowMobileMenuTree()) {
-        removeMobileMenuTrees();
-        return;
-      }
       document.querySelectorAll(".mantine-Drawer-body .mantine-w2f2ab").forEach(function (content) {
         var activeCategory = getActiveCategory();
-        syncMobileMenuTree(content, activeCategory ? activeCategory.id : null);
+        var activeId = activeCategory ? activeCategory.id : null;
+        if (hasDrawerLayout(content)) {
+          withDrawerPatch(function () {
+            applyDrawerLayout(content, activeId);
+            syncMobileMenuTree(content, activeId);
+          });
+          return;
+        }
+        syncMobileMenuTree(content, activeId);
       });
     }, 150);
   });

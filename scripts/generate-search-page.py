@@ -30,7 +30,7 @@ SEARCH_MARKUP = """
 
 
 def upsert_assets(soup: BeautifulSoup) -> None:
-    css_href = "/css/site-search.css?v=8"
+    css_href = "/css/site-search.css?v=12"
     app_css_href = "/css/app-search.css?v=2"
     js_href = "/js/site-search.js?v=6"
 
@@ -96,6 +96,8 @@ def set_metadata(soup: BeautifulSoup) -> None:
         for extra in ("internal-page-shell--search", "internal-page-shell--standalone"):
             if extra not in classes:
                 classes.append(extra)
+        if "internal-page-shell--about" in classes:
+            classes.remove("internal-page-shell--about")
         shell["class"] = classes
 
     for toc in soup.select(

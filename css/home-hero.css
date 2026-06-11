@@ -85,11 +85,24 @@ main .css-1jbx5ca,
   text-align: center;
 }
 
-/* Mobile: compact strip cards (icon left, label right) like hub pages */
-@media (max-width: 959px) {
+/* Tablet / mobile header: drop fixed hero height; keep gray fill below cards */
+@media (max-width: 1279px) {
+  main.css-yp9swi,
+  main.css-yp9swi .mantine-1hlnm3l,
+  main.css-yp9swi .mantine-b6zkvl,
+  main.css-yp9swi .mantine-1620ffq {
+    background: #e7e7e7 !important;
+  }
+
   main .mantine-1620ffq .css-ux95hh {
     height: auto !important;
     min-height: 0 !important;
+  }
+}
+
+/* Mobile: compact strip cards (icon left, label right) like hub pages */
+@media (max-width: 959px) {
+  main .mantine-1620ffq .css-ux95hh {
     padding-top: 24px !important;
   }
 

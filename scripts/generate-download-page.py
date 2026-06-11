@@ -17,6 +17,7 @@ APP_STORE_URL = (
     "https://apps.apple.com/ua/app/"
     "%D0%BF%D1%80%D0%B0%D0%B2%D0%BE%D0%B2%D0%B8%D0%B9-%D0%BD%D0%B0%D0%B2%D1%96%D0%B3%D0%B0%D1%82%D0%BE%D1%80/id6477533766?l=uk"
 )
+QR_PAGE_URL = "https://navigator.pryncyp.org/download"
 GOOGLE_PLAY_URL = "https://play.google.com/store/apps/details?id=com.legalnavigatormobile"
 TELEGRAM_URL = "https://t.me/pryncyp_bot"
 
@@ -31,7 +32,7 @@ QR_CAPTION = "Скануйте QR-код, щоб<br>завантажити Пр�
 def generate_qr_image() -> None:
     QR_PATH.parent.mkdir(parents=True, exist_ok=True)
     qr = qrcode.QRCode(version=1, box_size=8, border=2)
-    qr.add_data(APP_STORE_URL)
+    qr.add_data(QR_PAGE_URL)
     qr.make(fit=True)
     img = qr.make_image(fill_color="black", back_color="white")
     img.save(QR_PATH)
@@ -61,7 +62,7 @@ def download_card_markup() -> str:
     <div class="download-page-card__qr">
       <div class="download-page-card__qr-group">
         <div class="download-page-card__qr-box">
-          <img src="/img/download-app-qr.png" alt="QR-код для завантаження застосунку в App Store" width="240" height="240"/>
+          <img src="/img/download-app-qr.png" alt="QR-код для переходу на сторінку завантаження Правового навігатора" width="240" height="240"/>
         </div>
         <p class="css-tualuh download-page-card__qr-caption">{QR_CAPTION}</p>
       </div>
@@ -72,7 +73,7 @@ def download_card_markup() -> str:
 
 
 def upsert_download_css(soup: BeautifulSoup) -> None:
-    href = "/css/download-page.css?v=20"
+    href = "/css/download-page.css?v=21"
     existing = soup.select_one('link[href*="download-page.css"]')
     if existing:
         existing["href"] = href
