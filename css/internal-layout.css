@@ -456,7 +456,8 @@ body:has(.category-nav) .internal-page-shell {
 
 .internal-layout-active .internal-article-content .css-sdnfq3 > .mantine-172zsy7,
 .internal-layout-active .internal-article-content .css-sdnfq3 > p.mantine-172zsy7 {
-  margin-top: 10px !important;
+  margin-top: 2rem !important;
+  line-height: 1.5 !important;
 }
 
 .internal-layout-active .internal-article-content .css-sdnfq3 > h2.internal-section-h2 + .mantine-172zsy7,
@@ -997,12 +998,12 @@ body:has(.category-nav) .internal-page-shell {
 }
 
 .internal-layout-active .internal-article-content p.css-zcvv7c {
-  margin: 10px 0 0 !important;
+  margin: 2rem 0 0 !important;
   color: inherit !important;
   font-family: e-Ukraine, sans-serif !important;
   font-size: 1rem !important;
   font-weight: 400 !important;
-  line-height: 1.4 !important;
+  line-height: 1.5 !important;
 }
 
 .internal-layout-active .internal-article-content .css-bw3xdm > p.css-zcvv7c:first-child {
@@ -1135,7 +1136,7 @@ body:has(.category-nav) .internal-page-shell {
 .internal-layout-active .internal-article-content .internal-article-recommendation__label {
   margin: 0;
   font-size: 1rem;
-  line-height: 1.4;
+  line-height: 1.5;
   font-weight: 400;
   color: inherit;
 }
@@ -1441,10 +1442,10 @@ body:has(.category-nav) .internal-page-shell {
 .internal-layout-active .internal-page-shell--standalone .internal-article-content p.css-1xvvgf7.internal-article-intro {
   background: transparent !important;
   padding: 0 !important;
-  margin: 10px 0 0 !important;
+  margin: 2rem 0 0 !important;
   color: inherit !important;
   font-size: 1rem !important;
-  line-height: 1.4;
+  line-height: 1.5;
   font-weight: 400;
   max-width: none;
 }
@@ -1710,7 +1711,7 @@ body:has(.category-nav) .internal-page-shell {
   font-family: e-Ukraine, sans-serif;
   font-size: 1rem;
   font-weight: 400;
-  line-height: 1.4;
+  line-height: 1.5;
   color: inherit;
 }
 
@@ -1734,7 +1735,7 @@ body:has(.category-nav) .internal-page-shell {
   border: 1px solid #000000;
   font-family: e-Ukraine, sans-serif;
   font-size: 1rem;
-  line-height: 1.4;
+  line-height: 1.5;
   color: inherit;
 }
 
@@ -1770,7 +1771,7 @@ body:has(.category-nav) .internal-page-shell {
   font-family: e-Ukraine, sans-serif;
   font-size: 1rem;
   font-weight: 400;
-  line-height: 1.4;
+  line-height: 1.5;
   color: inherit;
 }
 
@@ -1787,7 +1788,7 @@ body:has(.category-nav) .internal-page-shell {
   font-family: e-Ukraine, sans-serif;
   font-size: 1rem;
   font-weight: 400;
-  line-height: 1.4;
+  line-height: 1.5;
   color: inherit;
 }
 
@@ -1800,7 +1801,7 @@ body:has(.category-nav) .internal-page-shell {
   font-family: e-Ukraine, sans-serif;
   font-size: 1rem;
   font-weight: 400;
-  line-height: 1.4;
+  line-height: 1.5;
   color: inherit;
 }
 

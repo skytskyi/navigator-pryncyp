@@ -13,9 +13,9 @@ main .mantine-1620ffq {
 main .mantine-1620ffq .css-ux95hh {
   box-sizing: border-box !important;
   width: 100% !important;
-  max-width: none !important;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
+  max-width: var(--site-container-max) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
   padding-left: var(--site-gutter, 16px) !important;
   padding-right: var(--site-gutter, 16px) !important;
 }

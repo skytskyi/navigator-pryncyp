@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-CSS_TAG = '<link rel="stylesheet" href="/css/category-nav.css?v=13"/>'
+CSS_TAG = '<link rel="stylesheet" href="/css/category-nav.css?v=14"/>'
 JS_TAG = '<script src="/js/category-nav.js?v=17"></script>'
 
 
@@ -26,7 +26,7 @@ def main() -> None:
 
         new_text = re.sub(
             r'href="/css/category-nav\.css\?v=\d+"',
-            'href="/css/category-nav.css?v=13"',
+            'href="/css/category-nav.css?v=14"',
             text,
         )
         if new_text != text:

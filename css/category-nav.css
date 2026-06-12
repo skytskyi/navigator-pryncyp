@@ -45,7 +45,7 @@
 
 .category-nav__label {
   position: absolute;
-  left: var(--site-gutter, 40px);
+  left: var(--site-container-inset, var(--site-gutter, 40px));
   top: 0;
   bottom: 0;
   display: flex;
@@ -66,8 +66,8 @@
   min-width: 0;
   height: 100%;
   box-sizing: border-box;
-  padding-right: var(--site-gutter, 40px);
-  padding-left: calc(var(--site-gutter, 40px) + 275px + 40px);
+  padding-right: var(--site-container-inset, var(--site-gutter, 40px));
+  padding-left: calc(var(--site-container-inset, var(--site-gutter, 40px)) + 275px + 40px);
 }
 
 .category-nav__links {

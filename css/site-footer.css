@@ -6,7 +6,7 @@
 
 @media (min-width: 768px) {
   .site-footer {
-    padding: 12px 38px;
+    padding: 12px var(--site-gutter, 16px);
   }
 }
 

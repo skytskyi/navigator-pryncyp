@@ -5,6 +5,9 @@
   --site-focus-ring-color: #000000;
   --site-focus-ring-offset: 2px;
   --site-gutter: 16px;
+  --site-container-max: 1440px;
+  --site-container-edge: max(0px, calc((100vw - var(--site-container-max)) / 2));
+  --site-container-inset: calc(var(--site-container-edge) + var(--site-gutter));
 }
 
 @media (max-width: 767px) {
@@ -142,4 +145,15 @@ body > #__next > main.css-yp9swi > .internal-page-shell {
   flex: 1 0 auto;
   width: 100%;
   min-height: 100%;
+}
+
+.site-container,
+header .css-1bgjytp,
+.internal-page-shell,
+.site-footer,
+main .mantine-1620ffq .css-ux95hh {
+  width: 100%;
+  max-width: var(--site-container-max);
+  margin-inline: auto;
+  box-sizing: border-box;
 }

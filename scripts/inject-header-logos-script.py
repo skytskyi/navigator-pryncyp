@@ -8,7 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 CSS_TAG = '<link rel="stylesheet" href="/css/header-logos.css?v=33"/>'
-GLOBAL_CSS_TAG = '<link rel="stylesheet" href="/css/site-global.css?v=6"/>'
+GLOBAL_CSS_TAG = '<link rel="stylesheet" href="/css/site-global.css?v=7"/>'
 MOBILE_CSS_TAG = '<link rel="stylesheet" href="/css/mobile-menu.css?v=44"/>'
 HEADER_CRITICAL_STYLE = (
     '  <style id="header-critical">'
@@ -112,7 +112,7 @@ def upsert_global_css(text: str) -> tuple[str, bool]:
     if "site-global.css" in text:
         new_text = re.sub(
             r'href="/css/site-global\.css\?v=\d+"',
-            'href="/css/site-global.css?v=6"',
+            'href="/css/site-global.css?v=7"',
             text,
         )
         return new_text, new_text != text

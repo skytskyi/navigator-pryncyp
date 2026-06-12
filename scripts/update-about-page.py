@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup, NavigableString, Tag
 ROOT = Path(__file__).resolve().parent.parent
 ABOUT_PATH = ROOT / "about" / "index.html"
 PAGE_TITLE = "Про нас"
-ABOUT_CSS = '<link href="/css/about-page.css?v=6" rel="stylesheet"/>'
+ABOUT_CSS = '<link href="/css/about-page.css?v=7" rel="stylesheet"/>'
 
 SOCIAL_LINKS = (
     ("https://www.facebook.com/pryncypua", "Facebook", "/img/facebook.svg"),
@@ -34,7 +34,7 @@ DOWNLOAD_CSS = '<link href="/css/download-page.css?v=21" rel="stylesheet"/>'
 def upsert_about_css(soup: BeautifulSoup) -> None:
     existing = soup.select_one('link[href*="about-page.css"]')
     if existing:
-        existing["href"] = "/css/about-page.css?v=6"
+        existing["href"] = "/css/about-page.css?v=7"
     else:
         internal_css = soup.select_one('link[href*="internal-layout.css"]')
         tag = BeautifulSoup(ABOUT_CSS, "html.parser")
