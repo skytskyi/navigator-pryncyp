@@ -28,7 +28,8 @@ PARTNERS = (
     ),
 )
 PARTNER_ICON = "/img/Arrow_45.svg"
-DOWNLOAD_CSS = '<link href="/css/download-page.css?v=21" rel="stylesheet"/>'
+EXTERNAL_LINK_ARROW_ICON = "/img/Arrow%20small%2045.svg"
+DOWNLOAD_CSS = '<link href="/css/download-page.css?v=27" rel="stylesheet"/>'
 
 
 def upsert_about_css(soup: BeautifulSoup) -> None:
@@ -45,7 +46,7 @@ def upsert_about_css(soup: BeautifulSoup) -> None:
 
     download_css = soup.select_one('link[href*="download-page.css"]')
     if download_css:
-        download_css["href"] = "/css/download-page.css?v=21"
+        download_css["href"] = "/css/download-page.css?v=27"
     else:
         about_css = soup.select_one('link[href*="about-page.css"]')
         tag = BeautifulSoup(DOWNLOAD_CSS, "html.parser")
@@ -100,6 +101,19 @@ def build_social_buttons(soup: BeautifulSoup) -> Tag:
         icon_wrap.append(img)
         link.append(icon_wrap)
         link.append(label_text)
+        arrow_wrap = soup.new_tag(
+            "span",
+            attrs={"class": "download-store-btn__external", "aria-hidden": "true"},
+        )
+        arrow = soup.new_tag(
+            "img",
+            src=EXTERNAL_LINK_ARROW_ICON,
+            alt="",
+            width="24",
+            height="24",
+        )
+        arrow_wrap.append(arrow)
+        link.append(arrow_wrap)
         buttons.append(link)
     wrap.append(buttons)
     return wrap

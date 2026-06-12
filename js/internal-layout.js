@@ -634,6 +634,281 @@
     return [];
   }
 
+  var INJURED_CHATBOT_PATHS = [
+    "/injured/",
+    "/injured-military/",
+    "/ingured-mia/",
+    "/ingured-mia/health-mvs/",
+    "/ingured-mia/vlk-mia/",
+    "/injured-military/prosthetics/",
+  ];
+
+  function injuredChatbotPathMatches(pagePath) {
+    return INJURED_CHATBOT_PATHS.some(function (candidate) {
+      return pathsEqual(pagePath, candidate);
+    });
+  }
+
+  function injuredChatbotPromoHtml(pagePath) {
+    if (!injuredChatbotPathMatches(pagePath)) {
+      return "";
+    }
+    return (
+      '<section class="internal-injured-chatbot" aria-labelledby="internal-injured-chatbot-title">' +
+      '<div class="internal-injured-chatbot__inner">' +
+      '<div class="internal-injured-chatbot__panel">' +
+      '<p class="internal-injured-chatbot__eyebrow">Безоплатна юридична допомога</p>' +
+      '<h2 class="internal-injured-chatbot__title" id="internal-injured-chatbot-title">' +
+      "Чат-бот для поранених військових" +
+      "</h2>" +
+      "<p class=\"internal-injured-chatbot__text\">" +
+      "За допомогою цього чат-бота можна отримати безоплатну юридичну консультацію. " +
+      "З військовослужбовцями працюватимуть юристи та юристки-волонтери, " +
+      "які попередньо пройшли навчання з військового права." +
+      "</p>" +
+      '<a class="internal-injured-chatbot__btn" href="https://t.me/pryncyp_bot" target="_blank" rel="noopener noreferrer">' +
+      '<span class="internal-injured-chatbot__btn-icon" aria-hidden="true">' +
+      '<img src="/img/telegram.svg" alt="" width="24" height="24"/>' +
+      "</span>" +
+      "Відкрити чат-бот" +
+      '<span class="internal-injured-chatbot__btn-arrow" aria-hidden="true">' +
+      '<img src="/img/Arrow%20small%2045.svg" alt="" width="24" height="24"/>' +
+      "</span>" +
+      "</a>" +
+      "</div>" +
+      "</div>" +
+      "</section>"
+    );
+  }
+
+  var INJURED_CHATBOT_URL = "https://t.me/pryncyp_bot";
+  var INJURED_FLOATING_CHATBOT_LABEL = "Чат-бот для поранених";
+  var INJURED_SECTION_PREFIXES = ["/injured/", "/injured-military/", "/ingured-mia/"];
+  var INJURED_FLOAT_BOTTOM_OFFSET = 48;
+  var INJURED_FLOAT_TOC_GAP = 48;
+  var TOC_BOTTOM_RESERVE_DEFAULT = 20;
+  var INJURED_FLOAT_SCROLL_VIEWPORT_MOBILE = 0.75;
+  var INJURED_FLOAT_SCROLL_SHORT_PAGE_RATIO = 1.5;
+  var INJURED_FLOAT_SCROLL_SHORT_THRESHOLD = 0.35;
+  var INJURED_FLOAT_SCROLL_MIN_MOBILE = 300;
+
+  function getCurrentPagePath() {
+    var main = getMainElement();
+    if (!main) {
+      return normalizePath(window.location.pathname);
+    }
+    return normalizePath(
+      main.getAttribute("data-internal-layout-baked") ||
+        main.getAttribute("data-internal-layout") ||
+        window.location.pathname
+    );
+  }
+
+  function injuredSectionPathMatches(pagePath) {
+    var path = normalizePath(pagePath);
+    for (var i = 0; i < INJURED_SECTION_PREFIXES.length; i++) {
+      var prefix = INJURED_SECTION_PREFIXES[i];
+      if (path === prefix || path.indexOf(prefix) === 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function isInjuredArticlePage() {
+    if (!injuredSectionPathMatches(getCurrentPagePath())) {
+      return false;
+    }
+
+    var content = document.querySelector(".internal-article-content");
+    if (!content) {
+      return false;
+    }
+
+    var main = document.querySelector(".internal-main");
+    if (main && main.querySelector(".internal-subcats-panel")) {
+      return false;
+    }
+
+    return !!(
+      content.querySelector(".internal-article-layout") ||
+      content.querySelector(".css-7nll2u")
+    );
+  }
+
+  function shouldShowInjuredFloatingChatbot() {
+    if (!isInjuredArticlePage()) {
+      return false;
+    }
+    return !document.querySelector(".internal-injured-chatbot");
+  }
+
+  function injuredFloatingChatbotHtml() {
+    var telegramIcon = typeof siteUrl === "function" ? siteUrl("/img/telegram.svg") : "/img/telegram.svg";
+    var arrowIcon =
+      typeof siteUrl === "function" ? siteUrl("/img/Arrow%20small%2045.svg") : "/img/Arrow%20small%2045.svg";
+    return (
+      '<a id="internal-injured-chatbot-float" class="internal-injured-chatbot-float" href="' +
+      INJURED_CHATBOT_URL +
+      '" target="_blank" rel="noopener noreferrer" aria-label="Відкрити ' +
+      INJURED_FLOATING_CHATBOT_LABEL +
+      '">' +
+      '<span class="internal-injured-chatbot-float__start">' +
+      '<span class="internal-injured-chatbot-float__icon" aria-hidden="true">' +
+      '<img src="' +
+      telegramIcon +
+      '" alt="" width="24" height="24"/>' +
+      "</span>" +
+      '<span class="internal-injured-chatbot-float__label">' +
+      INJURED_FLOATING_CHATBOT_LABEL +
+      "</span>" +
+      "</span>" +
+      '<span class="internal-injured-chatbot-float__arrow" aria-hidden="true">' +
+      '<img src="' +
+      arrowIcon +
+      '" alt="" width="24" height="24"/>' +
+      "</span>" +
+      "</a>"
+    );
+  }
+
+  function syncInjuredFloatingChatbotLayout(floatBtn) {
+    if (!floatBtn) {
+      return;
+    }
+
+    var useCompact = window.matchMedia("(max-width: 1279px)").matches;
+    floatBtn.classList.toggle("is-compact", useCompact);
+
+    if (useCompact) {
+      floatBtn.style.top = "";
+      floatBtn.style.right = "";
+      floatBtn.style.left = "";
+      floatBtn.style.width = "";
+      floatBtn.style.bottom = "";
+      floatBtn.style.transform = "";
+      return;
+    }
+
+    var toc = document.querySelector(".internal-article-toc");
+    if (toc) {
+      var rect = toc.getBoundingClientRect();
+      floatBtn.style.width = Math.round(rect.width) + "px";
+      floatBtn.style.left = Math.round(rect.left) + "px";
+      floatBtn.style.right = "auto";
+      floatBtn.style.bottom = "48px";
+      floatBtn.style.top = "auto";
+      floatBtn.style.transform = "none";
+      return;
+    }
+
+    var layout = document.querySelector(".internal-article-layout");
+    if (layout) {
+      var layoutRect = layout.getBoundingClientRect();
+      var dockWidth = 275;
+      floatBtn.style.width = dockWidth + "px";
+      floatBtn.style.left = Math.round(layoutRect.right - dockWidth) + "px";
+      floatBtn.style.right = "auto";
+      floatBtn.style.bottom = "48px";
+      floatBtn.style.top = "auto";
+      floatBtn.style.transform = "none";
+      return;
+    }
+
+    floatBtn.style.width = "275px";
+    floatBtn.style.right = "16px";
+    floatBtn.style.left = "auto";
+    floatBtn.style.bottom = "48px";
+    floatBtn.style.top = "auto";
+    floatBtn.style.transform = "none";
+  }
+
+  function syncInjuredFloatingChatbotTocReserve(floatBtn, visible) {
+    var reserve = TOC_BOTTOM_RESERVE_DEFAULT;
+    if (
+      visible &&
+      floatBtn &&
+      floatBtn.classList.contains("is-visible") &&
+      !floatBtn.classList.contains("is-compact") &&
+      window.matchMedia("(min-width: 1280px)").matches
+    ) {
+      reserve = INJURED_FLOAT_BOTTOM_OFFSET + floatBtn.offsetHeight + INJURED_FLOAT_TOC_GAP;
+    }
+    document.documentElement.style.setProperty("--internal-toc-bottom-reserve", reserve + "px");
+  }
+
+  function getInjuredFloatingChatbotScrollThreshold() {
+    var viewport = window.innerHeight || 0;
+    var scrollable = document.documentElement.scrollHeight - viewport;
+    if (scrollable <= 0) {
+      return 0;
+    }
+
+    var isMobile = window.matchMedia("(max-width: 1279px)").matches;
+    var threshold = isMobile ? viewport * INJURED_FLOAT_SCROLL_VIEWPORT_MOBILE : viewport;
+
+    if (scrollable < viewport * INJURED_FLOAT_SCROLL_SHORT_PAGE_RATIO) {
+      threshold = scrollable * INJURED_FLOAT_SCROLL_SHORT_THRESHOLD;
+    }
+
+    if (isMobile && threshold < INJURED_FLOAT_SCROLL_MIN_MOBILE) {
+      threshold = INJURED_FLOAT_SCROLL_MIN_MOBILE;
+    }
+
+    return threshold;
+  }
+
+  function initInjuredFloatingChatbot() {
+    if (!shouldShowInjuredFloatingChatbot()) {
+      return;
+    }
+    if (document.getElementById("internal-injured-chatbot-float")) {
+      return;
+    }
+
+    document.body.insertAdjacentHTML("beforeend", injuredFloatingChatbotHtml());
+    var floatBtn = document.getElementById("internal-injured-chatbot-float");
+    if (!floatBtn) {
+      return;
+    }
+
+    function shouldShowFloatingChatbotAtScroll() {
+      return window.scrollY >= getInjuredFloatingChatbotScrollThreshold();
+    }
+
+    function setFloatingChatbotVisible(visible) {
+      if (visible) {
+        syncInjuredFloatingChatbotLayout(floatBtn);
+        floatBtn.classList.add("is-visible");
+        document.documentElement.classList.add("internal-injured-chatbot-float-visible");
+        syncInjuredFloatingChatbotTocReserve(floatBtn, true);
+        return;
+      }
+      floatBtn.classList.remove("is-visible");
+      document.documentElement.classList.remove("internal-injured-chatbot-float-visible");
+      syncInjuredFloatingChatbotTocReserve(floatBtn, false);
+    }
+
+    function updateFloatingChatbotOnScroll() {
+      setFloatingChatbotVisible(shouldShowFloatingChatbotAtScroll());
+    }
+
+    function onResize() {
+      updateFloatingChatbotOnScroll();
+      if (floatBtn.classList.contains("is-visible")) {
+        syncInjuredFloatingChatbotLayout(floatBtn);
+        syncInjuredFloatingChatbotTocReserve(floatBtn, true);
+        return;
+      }
+      syncInjuredFloatingChatbotTocReserve(floatBtn, false);
+    }
+
+    window.addEventListener("scroll", updateFloatingChatbotOnScroll, { passive: true });
+    window.addEventListener("resize", onResize);
+    updateFloatingChatbotOnScroll();
+    onResize();
+  }
+
   function stripHtml(cards) {
     if (!cards.length) {
       return "";
@@ -757,6 +1032,7 @@
     normalizeDocumentDownloadBlocks();
     repairDashBulletLists();
     syncLayoutStickyOffset();
+    initInjuredFloatingChatbot();
     markLayoutReady();
   }
 
@@ -3004,7 +3280,8 @@
           '<h1 class="internal-page-title">' +
           pageTitle +
           "</h1>" +
-          (hubPage ? stripHtml(cards) : "");
+          (hubPage ? stripHtml(cards) : "") +
+          injuredChatbotPromoHtml(path);
 
         var oldSidebar = shell.querySelector(".internal-sidebar");
         var sidebarMarkup = sidebarHtml(category, path);
@@ -3110,6 +3387,7 @@
       }
       ensureMobileTocUi(tocScope);
     }
+    initInjuredFloatingChatbot();
     applyLayout(false);
   }
 

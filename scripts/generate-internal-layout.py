@@ -26,6 +26,20 @@ ROOT = Path(__file__).resolve().parent.parent
 TREE_PATH = ROOT / "data" / "site-nav-tree.json"
 HOME_LABEL = "Головна"
 SUBCAT_LABEL = "Виберіть підкатегорію:"
+INJURED_CHATBOT_PATHS = frozenset({
+    "/injured/",
+    "/injured-military/",
+    "/ingured-mia/",
+    "/ingured-mia/health-mvs/",
+    "/ingured-mia/vlk-mia/",
+    "/injured-military/prosthetics/",
+})
+INJURED_CHATBOT_URL = "https://t.me/pryncyp_bot"
+INJURED_CHATBOT_TEXT = (
+    "За допомогою цього чат-бота можна отримати безоплатну юридичну консультацію. "
+    "З військовослужбовцями працюватимуть юристи та юристки-волонтери, "
+    "які попередньо пройшли навчання з військового права."
+)
 STANDALONE_PAGES = {"/about/", "/documents/", "/faq/", "/download/", "/search/", "/privacy-policy/"}
 PRIVACY_PAGE_TITLE = (
     "Політика конфіденційності Громадської організації "
@@ -415,6 +429,34 @@ def sync_baked_mobile_toc(content_host: Tag) -> bool:
     else:
         row.append(toggle_markup)
     return True
+
+
+def injured_chatbot_promo_html(path: str) -> str:
+    if normalize_path(path) not in INJURED_CHATBOT_PATHS:
+        return ""
+    return (
+        '<section class="internal-injured-chatbot" aria-labelledby="internal-injured-chatbot-title">'
+        '<div class="internal-injured-chatbot__inner">'
+        '<div class="internal-injured-chatbot__panel">'
+        '<p class="internal-injured-chatbot__eyebrow">Безоплатна юридична допомога</p>'
+        '<h2 class="internal-injured-chatbot__title" id="internal-injured-chatbot-title">'
+        "Чат-бот для поранених військових"
+        "</h2>"
+        f'<p class="internal-injured-chatbot__text">{escape(INJURED_CHATBOT_TEXT)}</p>'
+        f'<a class="internal-injured-chatbot__btn" href="{escape(INJURED_CHATBOT_URL, quote=True)}" '
+        'target="_blank" rel="noopener noreferrer">'
+        '<span class="internal-injured-chatbot__btn-icon" aria-hidden="true">'
+        '<img src="/img/telegram.svg" alt="" width="24" height="24"/>'
+        "</span>"
+        "Відкрити чат-бот"
+        f'<span class="internal-injured-chatbot__btn-arrow" aria-hidden="true">'
+        f'<img src="{EXTERNAL_LINK_ARROW_ICON}" alt="" width="24" height="24"/>'
+        "</span>"
+        "</a>"
+        "</div>"
+        "</div>"
+        "</section>"
+    )
 
 
 def strip_html_cards(cards: list[dict]) -> str:
@@ -2585,6 +2627,7 @@ INLINE_LINK_SKIP_COMPONENT_CLASSES = frozenset(
     {
         "about-partner-btn",
         "download-store-btn",
+        "internal-injured-chatbot__btn",
     }
 )
 INLINE_LINK_SKIP_PARENT_CLASSES = frozenset(
@@ -2594,6 +2637,7 @@ INLINE_LINK_SKIP_PARENT_CLASSES = frozenset(
         "download-page-card__stores",
         "about-page__intro",
         "internal-article-recommendation",
+        "internal-injured-chatbot",
         "site-footer",
     }
 )
@@ -3647,6 +3691,78 @@ def _is_empty_text_container(el: Tag) -> bool:
     return not el.find(["img", "a", "table", "ul", "ol", "iframe", "svg", "video", "audio"])
 
 
+def _section_wrap_content_tags(section: Tag) -> list[Tag]:
+    return [
+        child
+        for child in section.children
+        if isinstance(child, Tag) and child.name != "style"
+    ]
+
+
+def _is_card_only_section(section: Tag) -> bool:
+    if "mantine-1fr50if" not in (section.get("class") or []):
+        return False
+    tags = _section_wrap_content_tags(section)
+    return bool(tags) and all("css-sdnfq3" in (tag.get("class") or []) for tag in tags)
+
+
+def remove_section_card_spacers(soup: BeautifulSoup) -> bool:
+    content = soup.select_one(".internal-article-content")
+    if not content:
+        return False
+    changed = False
+    for section in content.select(".mantine-1fr50if"):
+        for child in list(section.children):
+            if not isinstance(child, Tag) or child.name == "style":
+                continue
+            if "css-sdnfq3" in (child.get("class") or []):
+                break
+            if _is_empty_text_container(child):
+                child.decompose()
+                changed = True
+            else:
+                break
+    return changed
+
+
+def merge_consecutive_article_card_sections(soup: BeautifulSoup) -> bool:
+    content = soup.select_one(".internal-article-content")
+    if not content:
+        return False
+    container = content.select_one(".css-64gglc")
+    if not container:
+        return False
+    changed = False
+    while True:
+        sections = [
+            child
+            for child in container.children
+            if isinstance(child, Tag) and "mantine-1fr50if" in (child.get("class") or [])
+        ]
+        merged_once = False
+        for index in range(len(sections) - 1):
+            first, second = sections[index], sections[index + 1]
+            if not (_is_card_only_section(first) and _is_card_only_section(second)):
+                continue
+            for node in list(second.children):
+                if isinstance(node, Tag):
+                    first.append(node.extract())
+            second.decompose()
+            changed = True
+            merged_once = True
+            break
+        if not merged_once:
+            break
+    return changed
+
+
+def repair_article_card_sections(soup: BeautifulSoup) -> bool:
+    changed = remove_section_card_spacers(soup)
+    if merge_consecutive_article_card_sections(soup):
+        changed = True
+    return changed
+
+
 def remove_paragraph_spacer_breaks(soup: BeautifulSoup) -> bool:
     content = soup.select_one(".internal-article-content")
     if not content:
@@ -4531,6 +4647,7 @@ def bake_page(html_path: Path, tree: dict, force: bool = False) -> bool:
         normalize_inline_doc_link_icons(soup)
         normalize_document_download_blocks(soup)
         repair_header_foreigners_links(soup)
+        repair_article_card_sections(soup)
         repair_dash_bullet_lists(soup)
         repair_recommendation_callouts(soup)
         if content_host:
@@ -4651,6 +4768,7 @@ def bake_page(html_path: Path, tree: dict, force: bool = False) -> bool:
         if path == "/privacy-policy/":
             finalize_privacy_layout(content_host, soup, title)
         normalize_document_download_blocks(soup)
+        repair_article_card_sections(soup)
         repair_dash_bullet_lists(soup)
         set_html_ready(soup)
         html_path.write_text(
@@ -4697,6 +4815,7 @@ def bake_page(html_path: Path, tree: dict, force: bool = False) -> bool:
             breadcrumbs_row_html(breadcrumb_trail, [])
             + f'<h1 class="internal-page-title">{escape(title)}</h1>'
             + strip_html_cards(cards)
+            + injured_chatbot_promo_html(path)
         )
         content_host.clear()
         content_host.append(BeautifulSoup(header_html, "html.parser"))
@@ -4750,6 +4869,7 @@ def bake_page(html_path: Path, tree: dict, force: bool = False) -> bool:
     normalize_inline_doc_link_icons(soup)
     normalize_document_download_blocks(soup)
     repair_header_foreigners_links(soup)
+    repair_article_card_sections(soup)
     repair_dash_bullet_lists(soup)
     repair_recommendation_callouts(soup)
     content_host = soup.select_one(".internal-main")

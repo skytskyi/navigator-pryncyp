@@ -230,4 +230,55 @@ body:has(.category-nav) .internal-page-shell.internal-page-shell--search,
   .site-search-page__tab {
     font-size: 13px;
   }
+
+  .internal-page-shell--search .internal-main > .internal-article-layout {
+    flex: 0 0 auto;
+  }
+
+  .internal-layout-active .internal-page-shell--search .internal-article-content,
+  .internal-layout-active .internal-page-shell--search .internal-article-content:not(:has(.css-sdnfq3)) {
+    background: transparent !important;
+    padding: 0 !important;
+  }
+
+  .internal-layout-active .internal-page-shell--search .internal-article-content .css-7nll2u > .css-tualuh {
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .internal-layout-active main.css-yp9swi:has(.internal-page-shell--search) {
+    background: #e7e7e7;
+  }
+
+  .internal-layout-active .internal-page-shell--search {
+    flex: 1 0 auto;
+    min-height: 100%;
+    background: #e7e7e7;
+  }
+
+  .internal-layout-active .internal-page-shell--search .internal-main,
+  .internal-layout-active .internal-page-shell--search .internal-article-layout,
+  .internal-layout-active .internal-page-shell--search .internal-article-content,
+  .internal-layout-active .internal-page-shell--search .internal-article-content .css-7nll2u {
+    background: transparent !important;
+  }
+
+  .internal-layout-active .internal-page-shell--search .css-k1l4fw.internal-article-layout {
+    padding: 0 !important;
+  }
+
+  html.internal-layout-active:has(.internal-page-shell--search) body,
+  html.internal-layout-active:has(.internal-page-shell--search) body > #__next,
+  html.internal-layout-active:has(.internal-page-shell--search) body > #__next > .mantine-gemcqc {
+    background: #e7e7e7 !important;
+  }
+}
+
+@media (min-width: 960px) {
+  .internal-layout-active .internal-page-shell--search .internal-article-content:not(:has(.css-sdnfq3)) {
+    background: #ffffff;
+    padding: 24px 32px 32px;
+    box-sizing: border-box;
+  }
 }

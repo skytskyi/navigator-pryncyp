@@ -8,7 +8,7 @@ from pathlib import Path
 import re
 
 ROOT = Path(__file__).resolve().parent.parent
-CSS_TAG = '<link rel="stylesheet" href="/css/internal-layout.css?v=124"/>'
+CSS_TAG = '<link rel="stylesheet" href="/css/internal-layout.css?v=140"/>'
 CRITICAL_BLOCK = (
     '  <style id="internal-layout-critical">'
     "html.internal-layout-active main.css-yp9swi{visibility:visible}"
@@ -17,7 +17,7 @@ CRITICAL_BLOCK = (
     'document.documentElement.classList.add("internal-layout-active","internal-layout-ready");'
     "</script>"
 )
-JS_TAG = '<script src="/js/internal-layout.js?v=65"></script>'
+JS_TAG = '<script src="/js/internal-layout.js?v=77"></script>'
 PATCH_RUNTIME_TAG = '<script src="/js/patch-runtime.js?v=3"></script>'
 
 OLD_CRITICAL_RE = re.compile(
@@ -71,7 +71,7 @@ def main() -> None:
 
         new_text = re.sub(
             r'href="/css/internal-layout\.css\?v=\d+"',
-            'href="/css/internal-layout.css?v=124"',
+            'href="/css/internal-layout.css?v=140"',
             text,
         )
         if new_text != text:
@@ -81,7 +81,7 @@ def main() -> None:
 
         new_text = re.sub(
             r'src="/js/internal-layout\.js\?v=\d+"',
-            'src="/js/internal-layout.js?v=65"',
+            'src="/js/internal-layout.js?v=77"',
             text,
         )
         if new_text != text:

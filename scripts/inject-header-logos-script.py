@@ -9,7 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 CSS_TAG = '<link rel="stylesheet" href="/css/header-logos.css?v=35"/>'
 GLOBAL_CSS_TAG = '<link rel="stylesheet" href="/css/site-global.css?v=10"/>'
-MOBILE_CSS_TAG = '<link rel="stylesheet" href="/css/mobile-menu.css?v=44"/>'
+MOBILE_CSS_TAG = '<link rel="stylesheet" href="/css/mobile-menu.css?v=46"/>'
 HEADER_CRITICAL_STYLE = (
     '  <style id="header-critical">'
     "header .css-1bgjytp.mantine-ahbyky,header .css-1bgjytp.mantine-sel6jv{background:#fff!important;opacity:1!important}"
@@ -157,7 +157,7 @@ def upsert_mobile_assets(text: str) -> tuple[str, bool]:
     else:
         new_text = re.sub(
             r'href="/css/mobile-menu\.css\?v=\d+"',
-            'href="/css/mobile-menu.css?v=44"',
+            'href="/css/mobile-menu.css?v=46"',
             text,
         )
         if new_text != text:

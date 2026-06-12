@@ -8,8 +8,8 @@
   display: flex;
   flex-direction: column;
   gap: 32px;
-  padding: 0;
-  background: transparent;
+  padding: 24px 16px 32px;
+  background: #ffffff;
   box-sizing: border-box;
   width: 100%;
 }
@@ -20,6 +20,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 48px;
+    padding: 24px 32px 32px;
   }
 }
 
@@ -112,6 +113,22 @@
   height: 24px;
 }
 
+.download-store-btn__external {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: auto;
+  padding-right: 4px;
+}
+
+.download-store-btn__external img {
+  display: block;
+  width: 24px;
+  height: 24px;
+  filter: brightness(0);
+}
+
 .download-page-card__qr {
   display: flex;
   flex-direction: column;
@@ -164,6 +181,10 @@
   display: none !important;
 }
 
+.internal-page-shell--download .internal-main > .internal-article-layout {
+  flex: 0 0 auto;
+}
+
 .internal-page-shell--download .internal-article-layout {
   justify-content: center;
 }
@@ -172,7 +193,49 @@
   width: 100% !important;
 }
 
+.internal-layout-active .internal-page-shell--download .internal-article-content,
+.internal-layout-active .internal-page-shell--download .internal-article-content:not(:has(.css-sdnfq3)) {
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.internal-layout-active .internal-page-shell--download .internal-article-content .css-7nll2u > .css-tualuh,
+.internal-layout-active .internal-page-shell--download .internal-article-content p.download-page-card__lead {
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 10px 0 0 !important;
+}
+
 .internal-layout-active .internal-page-shell--download .internal-article-content {
   box-sizing: border-box;
   width: 100%;
+}
+
+@media (max-width: 959px) {
+  .internal-layout-active main.css-yp9swi:has(.internal-page-shell--download) {
+    background: #e7e7e7;
+  }
+
+  .internal-layout-active .internal-page-shell--download {
+    flex: 1 0 auto;
+    min-height: 100%;
+    background: #e7e7e7;
+  }
+
+  .internal-layout-active .internal-page-shell--download .internal-main,
+  .internal-layout-active .internal-page-shell--download .internal-article-layout,
+  .internal-layout-active .internal-page-shell--download .internal-article-content,
+  .internal-layout-active .internal-page-shell--download .internal-article-content .css-7nll2u {
+    background: transparent !important;
+  }
+
+  .internal-layout-active .internal-page-shell--download .css-k1l4fw.internal-article-layout {
+    padding: 0 !important;
+  }
+}
+
+html.internal-layout-active:has(.internal-page-shell--download) body,
+html.internal-layout-active:has(.internal-page-shell--download) body > #__next,
+html.internal-layout-active:has(.internal-page-shell--download) body > #__next > .mantine-gemcqc {
+  background: #e7e7e7 !important;
 }
