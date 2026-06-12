@@ -200,8 +200,8 @@ header .css-zfqabr a.css-bho8e5 {
 }
 
 header .css-zfqabr a.css-bho8e5:hover {
-  color: #7d7d7d;
-  opacity: 0.8;
+  color: var(--site-text-muted-color, #616161);
+  opacity: 1;
 }
 
 header .css-zfqabr a.css-clvzh3,
@@ -218,7 +218,8 @@ header .css-zfqabr a[href*="foreigners.navigator"] {
 header .css-zfqabr a.css-clvzh3:hover,
 header .css-zfqabr a[href*="foreigners.navigator"]:hover {
   transition: all 300ms ease-out;
-  color: #7d7d7d;
+  color: var(--site-text-muted-color, #616161);
+  opacity: 1;
 }
 
 header .css-zfqabr a[href*="foreigners.navigator"] .mantine-1uguyhf {
@@ -240,8 +241,12 @@ header .internal-article-external-link__icon {
 }
 
 header .css-1bgjytp {
-  padding-left: var(--site-gutter) !important;
-  padding-right: var(--site-gutter) !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin-inline: 0 !important;
+  padding-left: var(--site-container-inset, var(--site-gutter)) !important;
+  padding-right: var(--site-container-inset, var(--site-gutter)) !important;
+  box-sizing: border-box;
 }
 
 header .header-download-btn {

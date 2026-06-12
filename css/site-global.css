@@ -5,7 +5,7 @@
   --site-focus-ring-color: #000000;
   --site-focus-ring-offset: 2px;
   --site-gutter: 16px;
-  --site-container-max: 1440px;
+  --site-container-max: 1536px;
   --site-container-edge: max(0px, calc((100vw - var(--site-container-max)) / 2));
   --site-container-inset: calc(var(--site-container-edge) + var(--site-gutter));
 }
@@ -148,7 +148,6 @@ body > #__next > main.css-yp9swi > .internal-page-shell {
 }
 
 .site-container,
-header .css-1bgjytp,
 .internal-page-shell,
 .site-footer,
 main .mantine-1620ffq .css-ux95hh {

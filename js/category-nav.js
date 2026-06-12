@@ -214,9 +214,10 @@
 
     var navRect = nav.getBoundingClientRect();
     var shellRect = shell.getBoundingClientRect();
-    var shellOffset = shellRect.left - navRect.left;
+    var gutter = getSiteGutter();
+    var shellContentLeft = shellRect.left + gutter;
     return Math.round(
-      Math.max(shellOffset, getSiteGutter()) + SIDEBAR_WIDTH + SIDEBAR_CONTENT_GAP
+      shellContentLeft - navRect.left + SIDEBAR_WIDTH + SIDEBAR_CONTENT_GAP
     );
   }
 
