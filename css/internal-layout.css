@@ -916,7 +916,7 @@ body:has(.category-nav) .internal-page-shell {
   padding: 0 16px 0 12px;
   background: #000000;
   color: #ffffff;
-  border: 2px solid #000000;
+  border: 2px solid #ffffff;
   box-sizing: border-box;
   font-family: e-Ukraine, sans-serif;
   font-size: 14px;
@@ -956,7 +956,7 @@ body:has(.category-nav) .internal-page-shell {
 .internal-injured-chatbot__btn:hover,
 .internal-injured-chatbot__btn:focus-visible {
   background: #1a1a1a;
-  border-color: #1a1a1a;
+  border-color: #ffffff;
   color: #ffffff;
   text-decoration: none;
 }
